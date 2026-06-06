@@ -1,4 +1,5 @@
 #include <string>
+#include <map>
 #pragma once
 
 enum class TokenType {
@@ -39,7 +40,7 @@ enum class TokenType {
   MINUS, // -
   ASTERISK, // *
   SLASH, // /
-  MOD, // /
+  MOD, // %
   PLUS_EQUAL, // +=
   MINUS_EQUAL, // -=
   ASTERISK_EQUAL, // *=
@@ -63,3 +64,5 @@ struct Token {
   int line_num;
   int col_num;
 };
+
+std::map<std::string, Token> tokenmap;
