@@ -64,5 +64,3 @@ struct Token {
   int line_num;
   int col_num;
 };
-
-std::map<std::string, Token> tokenmap;
