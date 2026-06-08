@@ -219,6 +219,20 @@ bool Lexer::need_break() {
   return false;
 }
 
+void Lexer::add_string() {
+  Token str;
+  str.type = TokenType::STR_LITERAL;
+  std::string temp;  
+  str.line_num = row;
+  str.col_num = col-(int)buffer.size();
+  for (int i = 0; i<(int)buffer.size(); i++) {
+    if (buffer[i] == '\\' && i+1 < buffer.size() && (buffer[i+1] == '"' || buffer[i+1] == '\\' || buffer[i+1] == '\'')) continue;
+    temp.push_back(buffer[i]);
+  }
+  str.text = buffer;
+  tokens.push_back(str);
+}
+
 void Lexer::_EOF() {
   Token eof;
   eof.type = TokenType::END_OF_FILE;
@@ -231,7 +245,29 @@ void Lexer::_EOF() {
 std::vector<Token> Lexer::tokenize() {
   bool in_sl_comment = false;
   bool in_ml_comment = false;
+  bool in_string = false;
   while (ind < (int)source.size()) {
+    if (source[ind] == '"') {
+      if (in_string) {
+        in_string = false;
+        add_string();
+        buffer.clear();
+        ind++;
+        col++;
+      }
+      else {
+        in_string = true;
+        ind++;
+      }
+      continue;
+    }
+    if (in_string) {
+      if (source[ind] == '\n') col++, lexical_error();
+      buffer.push_back(source[ind]);
+      ind++;
+      col++;
+      continue;
+    }
     if (source[ind] == '#') {
       if (!buffer.empty()) {
         buffer.push_back(source[ind]);
@@ -281,5 +317,6 @@ std::string Lexer::TokenToString(Token tk) {
 void Lexer::printtokens() {
   for (auto token: tokens) {
     std::cout << TokenToString(token) << "\n";
+    std::cout << token.text << "\n";
   }
 }

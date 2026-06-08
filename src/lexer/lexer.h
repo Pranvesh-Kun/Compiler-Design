@@ -18,6 +18,7 @@ class Lexer {
     bool isFloat();
     bool need_break();
     void lexical_error();
+    void add_string();
     std::string TokenToString(Token);
     void _EOF();
 
