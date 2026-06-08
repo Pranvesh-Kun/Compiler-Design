@@ -7,14 +7,19 @@ class Lexer {
   private:
     std::string buffer;
     std::string source;
-    int row = 0;
-    int col = 0;
-    int ind = 0;
+    std::vector<Token> tokens;
+    int row;
+    int col;
+    int ind;
     bool isSymbol(char);
     bool isKeyword();
-    bool isNumber(char);
+    bool isIdentifier();
+    bool isInteger();
+    bool isFloat();
+    bool need_break();
 
   public:
     Lexer(std::string);
     std::vector<Token> tokenize();
+    void assign_token();
 };

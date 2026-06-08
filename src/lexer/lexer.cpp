@@ -65,6 +65,10 @@ std::map<std::string, TokenType> keywordmap = {
 
 Lexer::Lexer(std::string s) {
   source = s;
+  row = 0;
+  col = 0;
+  ind = 0;
+  std::vector<Token> tokens;
 }
 
 bool Lexer::isKeyword() {
@@ -77,14 +81,72 @@ bool Lexer::isSymbol(char c) {
   return false;
 }
 
-bool Lexer::isNumber(char c) {
-  if (c-'0' <= 9) return true;
-  return false;
+bool Lexer::isIdentifier() {
+  if (!(isalpha(buffer[0]) || buffer[0] == '_')) return false;
+  for (auto c: buffer) {
+    if (isalnum(c) || c == '_') continue;
+    return false;
+  }
+  return true;
+}
+
+bool Lexer::isInteger() {
+  for (auto c: buffer) {
+    if (isdigit(c)) continue;
+    return false;
+  }
+  return true;
+}
+
+bool Lexer::isFloat() {
+
+}
+
+void Lexer::assign_token() {
+  Token tk;
+  tk.line_num = row;
+  tk.col_num = col;
+  tk.text = buffer;
+  if (isKeyword()) {
+    tk.type = keywordmap[buffer];
+  }
+  else {
+    // can be operator, literal or identifier.
+    if (symbolmap.find(buffer) != symbolmap.end()) {
+      tk.type = symbolmap[buffer];
+    }
+    else if (isIdentifier()) {
+      tk.type = TokenType::IDENTIFIER;
+    }
+    else if (isInteger()) {
+      tk.type = TokenType::INT_LITERAL;
+    }
+    else if (isFloat()) {
+      tk.type = TokenType::FLOAT_LITERAL;
+    }
+  }
+  tokens.push_back(tk);
+}
+
+bool Lexer::need_break() {
+
 }
 
 std::vector<Token> Lexer::tokenize() {
   while (ind < (int)source.size()) {
+    if (need_break()) {
+      if (buffer.empty()) {
+        ind++;
+        continue;
+      }
+      assign_token();
+      buffer.clear();
+    }
+    else {
+      buffer.push_back(source[ind]);
+    }
     ind++;
-    
   }
+  assign_token();
+  return tokens;
 }
