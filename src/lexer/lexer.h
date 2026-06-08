@@ -19,6 +19,7 @@ class Lexer {
     bool need_break();
     void lexical_error();
     std::string TokenToString(Token);
+    void _EOF();
 
   public:
     Lexer(std::string);

@@ -163,12 +163,16 @@ bool Lexer::isInteger() {
 
 bool Lexer::isFloat() {
   int cnt = 0;
+  bool digit = false;
   for (auto c: buffer) {
-    if (isdigit(c)) continue;
+    if (isdigit(c)) {
+      digit = true;
+      continue;
+    }
     if (c == '.') cnt++;
     else return false;
   }
-  if (cnt != 1) return false;
+  if (cnt != 1 || !digit) return false;
   return true;
 }
 
@@ -215,6 +219,15 @@ bool Lexer::need_break() {
   return false;
 }
 
+void Lexer::_EOF() {
+  Token eof;
+  eof.type = TokenType::END_OF_FILE;
+  eof.col_num = col;
+  eof.line_num = row;
+  eof.text = "EOF";
+  tokens.push_back(eof);
+}
+
 std::vector<Token> Lexer::tokenize() {
   while (ind < (int)source.size()) {
     if (need_break()) {
@@ -236,6 +249,7 @@ std::vector<Token> Lexer::tokenize() {
     ind++;
   }
   assign_token();
+  _EOF();
   return tokens;
 }
 
