@@ -1,0 +1,10 @@
+*.exe
+*.out
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+
+.vscode/
