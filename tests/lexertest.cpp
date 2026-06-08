@@ -1,7 +1,7 @@
 #include "lexer.h"
 
 int main() {
-  std::string code = ".1";
+  std::string code = "#";
   Lexer lex = Lexer(code);
   lex.tokenize();
   lex.printtokens();

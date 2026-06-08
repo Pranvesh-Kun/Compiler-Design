@@ -229,24 +229,45 @@ void Lexer::_EOF() {
 }
 
 std::vector<Token> Lexer::tokenize() {
+  bool in_sl_comment = false;
+  bool in_ml_comment = false;
   while (ind < (int)source.size()) {
-    if (need_break()) {
+    if (source[ind] == '#') {
+      if (!buffer.empty()) {
+        buffer.push_back(source[ind]);
+        col++;
+        lexical_error();
+      }
+      if ((ind+1 < (int)source.size() && source[ind+1] == '#') && (ind+2 < (int)source.size() && source[ind+2] == '#')) {
+        in_ml_comment = !in_ml_comment;
+        ind += 2;
+        col += 2;
+        continue;
+      }
+      else in_sl_comment = true;
+    }
+    else if (need_break()) {
       if (!buffer.empty()) {
         assign_token();
         buffer.clear();
       }
     }
-    if (source[ind] != ' ' && source[ind] != '\n') {
+    if (source[ind] != ' ' && source[ind] != '\n' && !in_sl_comment && !in_ml_comment) {
       buffer.push_back(source[ind]);
     }
     if (source[ind] == '\n') {
       row++;
       col = 1;
+      if (in_sl_comment) in_sl_comment = false;
     }
     else {
       col++;
     }
     ind++;
+  }
+  if (in_ml_comment) {
+    std::cout << "Lexical Error at line " << row << ", column " << col-buffer.size()-1 << ": Unterminated multiline comment." << "\n";
+    abort();
   }
   assign_token();
   _EOF();

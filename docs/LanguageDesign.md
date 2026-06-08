@@ -8,6 +8,7 @@ No semicolons are used to identify the end of sentence.
 Uses curly braces for blocks.
 
 We do not need a main function. We do not have an entry point, just start typing normally.
+Also multiline strings are allowed.
 
 We will use # to comment.
 
