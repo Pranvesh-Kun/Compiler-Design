@@ -17,9 +17,12 @@ class Lexer {
     bool isInteger();
     bool isFloat();
     bool need_break();
+    void lexical_error();
+    std::string TokenToString(Token);
 
   public:
     Lexer(std::string);
     std::vector<Token> tokenize();
     void assign_token();
+    void printtokens();
 };
