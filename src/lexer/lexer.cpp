@@ -211,24 +211,28 @@ void Lexer::assign_token() {
   tokens.push_back(tk);
 }
 
+std::vector<char> paren = {'{', '}', '(', ')', '[', ']'};
+
 bool Lexer::need_break() {
   if (buffer.empty()) return false;
   if (source[ind] == ' ' || source[ind] == '\n') return true;
   if (isSymbol(source[ind]) && isalnum(buffer.back())) return true;
   if (isSymbol(buffer.back()) && isalnum(source[ind])) return true;
+  for (auto p: paren) {
+    if (p == source[ind] || p == buffer.back()) return true;
+  }
   return false;
 }
 
 void Lexer::add_string() {
   Token str;
   str.type = TokenType::STR_LITERAL;
-  std::string temp;  
   str.line_num = row;
-  str.col_num = col-(int)buffer.size();
-  for (int i = 0; i<(int)buffer.size(); i++) {
-    if (buffer[i] == '\\' && i+1 < buffer.size() && (buffer[i+1] == '"' || buffer[i+1] == '\\' || buffer[i+1] == '\'')) continue;
-    temp.push_back(buffer[i]);
+  int sz = (int)buffer.size();
+  for (auto c: buffer) {
+    if (c == '"' || c == '\'' || c == '\n' || c == '\t') sz++;
   }
+  str.col_num = col-sz;
   str.text = buffer;
   tokens.push_back(str);
 }
@@ -242,11 +246,43 @@ void Lexer::_EOF() {
   tokens.push_back(eof);
 }
 
+void Lexer::escape_error() {
+  std::cout << "Lexical Error at line " << row << ", column " << col << ":\nUnknown escape sequence.\n";
+  abort();
+}
+
 std::vector<Token> Lexer::tokenize() {
   bool in_sl_comment = false;
   bool in_ml_comment = false;
   bool in_string = false;
   while (ind < (int)source.size()) {
+    if (source[ind] == '\\' && in_string) {
+      if (ind + 1 < (int)source.size() && (source[ind+1] == '"' || source[ind+1] == '\\')) {
+        ind++;
+        col++;
+        buffer.push_back(source[ind]);
+        ind++;
+        col++;
+        continue;
+      }
+      else if (ind + 1 < (int)source.size()) {
+        if (source[ind+1] == 'n') {
+          ind+=2;
+          col+=2;
+          buffer.push_back('\n');
+          continue;
+        }
+        if (source[ind+1] == 't') {
+          ind+=2;
+          col+=2;
+          buffer.push_back('\t');
+          continue;
+        }
+        else {
+          escape_error();
+        }
+      }
+    }
     if (source[ind] == '"') {
       if (in_string) {
         in_string = false;
@@ -256,13 +292,16 @@ std::vector<Token> Lexer::tokenize() {
         col++;
       }
       else {
+        assign_token();
+        buffer.clear();
         in_string = true;
         ind++;
+        col++;
       }
       continue;
     }
     if (in_string) {
-      if (source[ind] == '\n') col++, lexical_error();
+      if (source[ind] == '\n') lexical_error();
       buffer.push_back(source[ind]);
       ind++;
       col++;
@@ -302,9 +341,14 @@ std::vector<Token> Lexer::tokenize() {
     ind++;
   }
   if (in_ml_comment) {
-    std::cout << "Lexical Error at line " << row << ", column " << col-buffer.size()-1 << ": Unterminated multiline comment." << "\n";
+    std::cout << "Lexical Error at line " << row << ", column " << col-buffer.size()-1 << ":\nUnterminated multiline comment." << "\n";
     abort();
   }
+  if (in_string) {
+    std::cout << "Lexical Error at line " << row << ", column " << col-buffer.size()-1 << ":\nUnterminated string literal." << "\n";
+    abort();
+  }
+
   assign_token();
   _EOF();
   return tokens;
@@ -317,6 +361,6 @@ std::string Lexer::TokenToString(Token tk) {
 void Lexer::printtokens() {
   for (auto token: tokens) {
     std::cout << TokenToString(token) << "\n";
-    std::cout << token.text << "\n";
+    // std::cout << token.text << "\n";
   }
 }

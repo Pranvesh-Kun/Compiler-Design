@@ -26,6 +26,7 @@ bool (true/false)
 string
 
 We do not have a char type, just going to use string.
+Escape characters are \", \\, \n, \t.
 
 Variables:
 

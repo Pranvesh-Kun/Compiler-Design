@@ -21,6 +21,7 @@ class Lexer {
     void add_string();
     std::string TokenToString(Token);
     void _EOF();
+    void escape_error();
 
   public:
     Lexer(std::string);

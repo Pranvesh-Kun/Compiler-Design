@@ -1,0 +1,82 @@
+# Single line comment
+
+###
+Multi line comment
+with multiple lines
+###
+
+int x = 5
+float pi = 3.14159
+bool flag = true
+bool other = false
+
+string empty = ""
+string msg = "Hello World"
+string quote = "He said \"Hello\""
+string slash = "C:\\Users\\Tony"
+string newline = "Line1\nLine2"
+string tab = "A\tB"
+
+let count = 0
+
+count++
+count--
+count += 10
+count -= 5
+count *= 2
+count /= 3
+count %= 4
+
+if (count >= 5) {
+    output("greater")
+}
+
+if (count <= 100) {
+    output("small")
+}
+
+if (count != 50) {
+    output("not fifty")
+}
+
+if (count == 42) {
+    output("answer")
+}
+else {
+    output("not answer")
+}
+
+array numbers = [1,2,3,4,5]
+
+for i in numbers {
+    output(i)
+}
+
+while (count > 0) {
+    count--
+}
+
+let _temp = 123
+let hello_world_123 = 456
+
+x+y*z
+(x+y)*(z-1)
+
+input(name)
+output(name)
+
+###
+Another comment block
+
+with empty lines
+
+inside it
+###
+
+string symbols = "(){}[]+=-=*=/=%=<><===!=&&||"
+
+string s = ""
+
+string s = "\""
+string s = "\\"
+string s = "\\"
