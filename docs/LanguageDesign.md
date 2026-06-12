@@ -108,7 +108,7 @@ for (i in arr) {
 
 index based:
 
-for (int i = 0; i<n; i++) {
+for (i in range(0, n)) { // does not include n
 
 }
 
