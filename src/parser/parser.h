@@ -30,6 +30,8 @@ class Parser {
     void advance();
     Token peek();
     Token current();
+    void parser_error(TokenType expected);
+    void parser_error_statement();
 
   public:
     ProgramNode* parseProgram();

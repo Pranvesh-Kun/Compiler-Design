@@ -6,6 +6,18 @@ Parser::Parser(std::vector<Token> tks) {
   ind = 0;
 };
 
+void Parser::parser_error(TokenType expected) {
+  std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+  std::cout << "Expected: " << tokenmap[expected] << ", Found: " << tokenmap[current().type] << "\n";
+  abort();
+}
+
+void Parser::parser_error_statement() {
+  std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+  std::cout << "Expected a statement, Found: " << tokenmap[current().type] << "\n";
+  abort();
+}
+
 void Parser::advance() {
   ind++;  
 }
@@ -21,39 +33,51 @@ Token Parser::current() {
 
 StatementNode* Parser::parseStatement() {
   Token cur = current();
-  StatementNode* statement;
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING
   || cur.type == TokenType::KW_BOOL || cur.type == TokenType::KW_ARRAY || cur.type == TokenType::KW_LET) {
     // starts with type
     if (cur.type == TokenType::KW_LET) {
-      statement = parseVariableDeclaration();
+      return parseVariableDeclaration();
     }
     advance();
     cur = current();
-    if (cur.type == TokenType::END_OF_FILE) {
-      // handle error
-      std::cout << "Parse Error, at line: " << cur.line_num << ", column: " << cur.col_num << ".\nExpected Token: Identifier, Found EOF.\n";
+    if (cur.type != TokenType::IDENTIFIER) {
+      parser_error(TokenType::IDENTIFIER);
     }
     if (peek().type == TokenType::L_PAREN) {
       ind--;
-      statement = parseFunctionDeclaration();
+      return parseFunctionDeclaration();
     }    
     else {
       ind--;
-      statement = parseVariableDeclaration();
+      return parseVariableDeclaration();
     }
   }
   else if (cur.type ==  TokenType::KW_IF) {
-    statement = parseIfStatement();
+    return parseIfStatement();
   }
   else if (cur.type == TokenType::KW_FOR) {
-    statement = parseForLoop();
+    return parseForLoop();
   }
   else if (cur.type == TokenType::KW_WHILE) {
-    statement = parseWhileLoop();
+    return parseWhileLoop();
   }
   else if (cur.type == TokenType::KW_RETURN) {
-    statement = parseReturn();
+    return parseReturn();
+  }
+  else if (cur.type == TokenType::IDENTIFIER) {
+    if (peek().type == TokenType::L_PAREN) {
+      return parseExpressionStatement();
+    }
+    else if (peek().type == TokenType::L_SQUARE) {
+      return parseIndexAssignment();
+    }
+    else {
+      return parseAssignment();
+    }
+  }
+  else {
+    parser_error_statement();
   }
 }
 
