@@ -124,7 +124,7 @@ int add(int a, int b) {
   return a+b
 }
 
-void functions are supported.
+void functions are supported, should return 0 still.
 Recursion is also supported.
 
 Operators:

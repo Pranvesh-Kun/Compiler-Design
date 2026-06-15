@@ -112,6 +112,41 @@ VariableDeclarationNode* Parser::parseVariableDeclaration() {
   return node;
 }
 
+AssignmentNode* Parser::parseAssignment() {
+    AssignmentNode* node = new AssignmentNode();
+    node->name = parseIdentifier();
+    if (current().type != TokenType::ASSIGN) parser_error(TokenType::ASSIGN);
+    advance();
+    node->value = parseExpression();
+    return node;
+}
+
+IndexAssignmentNode* Parser::parseIndexAssignment() {
+  IndexAssignmentNode* node = new IndexAssignmentNode();
+  node->object = parseIdentifier();
+  advance();
+  node->index = parseExpression();
+  if (current().type != TokenType::R_SQUARE) parser_error(TokenType::R_SQUARE);
+  advance();
+  if (current().type != TokenType::ASSIGN) parser_error(TokenType::ASSIGN);
+  advance();
+  node->value = parseExpression();
+  return node;
+}
+
+ExpressionStatementNode* Parser::parseExpressionStatement() {
+  ExpressionStatementNode* node = new ExpressionStatementNode();
+  node->expression = parseExpression();
+  return node;
+}
+
+ReturnNode* Parser::parseReturn() {
+  advance();
+  ReturnNode* node = new ReturnNode();
+  node->value = parseExpression();
+  return node;
+}
+
 StatementNode* Parser::parseStatement() {
   Token cur = current();
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING

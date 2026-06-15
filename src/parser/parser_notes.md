@@ -156,16 +156,16 @@ ExpressionNode:
   IndexAccessNode
 
 StatementNode:
-  VariableDeclarationNode - ok
-  AssignmentNode - ok
-  IndexAssignmentNode - ok
+  VariableDeclarationNode - ok ok
+  AssignmentNode - ok ok 
+  IndexAssignmentNode - ok ok
   IfStatementNode - ok
   ElseIfNode - ok
   WhileLoopNode - ok
   ForLoopNode - ok
   FunctionDeclarationNode - ok
-  ReturnNode - ok
-  ExpressionStatementNode - ok
+  ReturnNode - ok ok
+  ExpressionStatementNode - ok ok
 
 ParameterNode
 

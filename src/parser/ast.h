@@ -55,7 +55,7 @@ class IdentifierNode: public ExpressionNode {
 
 class IndexAccessNode: public ExpressionNode {
   public:
-    ExpressionNode* object;
+    IdentifierNode* object;
     ExpressionNode* index;
 };
 
@@ -84,7 +84,7 @@ class FunctionCallNode: public ExpressionNode {
     std::vector<ExpressionNode*> arguments;
 };
 
-class VariableDeclarationNode: public StatementNode {
+class VariableDeclarationNode: public  StatementNode {
   public:
     TokenType type;
     TokenType subtype;
@@ -101,7 +101,7 @@ class AssignmentNode: public StatementNode {
 
 class IndexAssignmentNode: public StatementNode {
   public:
-    ExpressionNode* object;
+    IdentifierNode* object;
     ExpressionNode* index;
     ExpressionNode* value;
 };
