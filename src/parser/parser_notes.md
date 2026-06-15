@@ -162,7 +162,7 @@ StatementNode:
   IfStatementNode
   ElseIfNode
   WhileLoopNode
-  ForloopNode
+  ForLoopNode
   FunctionDeclarationNode
   ReturnNode
   ExpressionStatementNode
