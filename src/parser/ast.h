@@ -87,6 +87,7 @@ class FunctionCallNode: public ExpressionNode {
 class VariableDeclarationNode: public StatementNode {
   public:
     TokenType type;
+    TokenType subtype;
     IdentifierNode* name;
     ExpressionNode* initializer;
     ExpressionNode* size;
