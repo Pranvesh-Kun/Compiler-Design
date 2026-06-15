@@ -4,7 +4,7 @@
 class Parser {
   private:
     std::vector<Token> tokens;
-    int cur;
+    int ind;
     StatementNode* parseStatement();
     ExpressionNode* parseExpression();
     IdentifierNode* parseIdentifier();
