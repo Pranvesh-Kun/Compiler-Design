@@ -87,6 +87,7 @@ VariableDeclarationNode:
   type:
   name:
   initializer: *ExpressionNode
+  size: *ExpressionNode
 
 AssignmentNode:
   name: *IdentifierNode
@@ -159,11 +160,14 @@ StatementNode:
   AssignmentNode
   IndexAssignmentNode
   IfStatementNode
+  ElseIfNode
   WhileLoopNode
   ForloopNode
   FunctionDeclarationNode
   ReturnNode
   ExpressionStatementNode
+
+ParameterNode
 
 
 
