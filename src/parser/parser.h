@@ -29,6 +29,7 @@ class Parser {
     ExpressionStatementNode* parseExpressionStatement();
     BreakNode* parseBreak();
     ContinueNode* parseContinue();
+    ParameterNode* parseParameter();
     void advance();
     Token peek();
     Token current();

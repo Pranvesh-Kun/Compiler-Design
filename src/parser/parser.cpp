@@ -144,6 +144,24 @@ ExpressionStatementNode* Parser::parseExpressionStatement() {
   return node;
 }
 
+WhileLoopNode* Parser::parseWhileLoop() {
+  WhileLoopNode* node = new WhileLoopNode();
+  advance();
+  if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+  advance();
+  node->condition = parseExpression();
+  if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+  advance();
+  if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
+  advance();
+  while (!check(TokenType::R_CURLY)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
+    node->codeblock.push_back(parseStatement());
+  }
+  advance();
+  return node;
+}
+
 ReturnNode* Parser::parseReturn() {
   advance();
   ReturnNode* node = new ReturnNode();
@@ -173,7 +191,8 @@ ElseIfNode* Parser::parseElseIf() {
   advance();
   if (current().type != TokenType::L_CURLY) parser_error(TokenType::L_CURLY);
   advance();
-  while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+  while (!check(TokenType::R_CURLY)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
     node->codeblock.push_back(parseStatement());
   }
   advance();
@@ -190,7 +209,8 @@ IfStatementNode* Parser::parseIfStatement() {
   advance();
   if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
   advance();
-  while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+  while (!check(TokenType::R_CURLY)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
     node->codeblock.push_back(parseStatement());
   } 
   advance();
@@ -200,7 +220,8 @@ IfStatementNode* Parser::parseIfStatement() {
     else {
       if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
       advance();
-      while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+      while (!check(TokenType::R_CURLY)) {
+        if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
         node->elseblock.push_back(parseStatement());
       }
       advance();
@@ -210,13 +231,90 @@ IfStatementNode* Parser::parseIfStatement() {
   return node;
 }
 
+ForLoopNode* Parser::parseForLoop() {
+  ForLoopNode* node = new ForLoopNode();
+  advance();
+  if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+  advance();
+  node->iterator = parseIdentifier();
+  if (!check(TokenType::KW_IN)) parser_error(TokenType::KW_IN);
+  advance();
+  node->iterable = parseExpression();
+  if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+  advance();
+  if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
+  advance();
+  while (!check(TokenType::R_CURLY)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
+    node->codeblock.push_back(parseStatement());
+  }
+  advance();
+  return node;
+}
+
+ParameterNode* Parser::parseParameter() {
+  ParameterNode* node = new ParameterNode();
+  if (!check(TokenType::KW_INT) && !check(TokenType::KW_FLOAT) && !check(TokenType::KW_BOOL) 
+  && !check(TokenType::KW_ARRAY) && !check(TokenType::KW_STRING)) {
+    std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+    std::cout << "Expected a parameter, Found: " << tokenmap[current().type] << "\n";
+    abort();   
+  } 
+  node->type = current().type;
+  node->subtype = current().type;
+  if (node->type == TokenType::KW_ARRAY) {
+    advance();
+    if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+    advance();
+    node->subtype = current().type;
+    if (!check(TokenType::KW_INT) && !check(TokenType::KW_FLOAT) 
+        && !check(TokenType::KW_BOOL) && !check(TokenType::KW_STRING)) {
+      std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+      std::cout << "Expected a valid array element type " << "(int, float, bool, string), Found: " << tokenmap[current().type] << "\n";
+      abort();
+    }
+    advance();
+    if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+  }
+  advance();
+  node->name = parseIdentifier();
+  return node;
+}
+
+FunctionDeclarationNode* Parser::parseFunctionDeclaration() {
+  FunctionDeclarationNode* node = new FunctionDeclarationNode();
+  node->returntype = current().type;
+  advance();
+  node->name = parseIdentifier();
+  if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+  advance();
+  while (!check(TokenType::R_PAREN)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_PAREN);
+    node->parameters.push_back(parseParameter());
+    if (check(TokenType::COMMA))  advance();
+    else if (!check(TokenType::R_PAREN)) parser_error(TokenType::COMMA);
+  }
+  advance();
+  if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
+  advance();
+  while (!check(TokenType::R_CURLY)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_CURLY);
+    node->body.push_back(parseStatement());
+  }
+  advance();
+  return node;
+}
+
 StatementNode* Parser::parseStatement() {
   Token cur = current();
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING
-  || cur.type == TokenType::KW_BOOL || cur.type == TokenType::KW_ARRAY || cur.type == TokenType::KW_LET) {
+  || cur.type == TokenType::KW_BOOL || cur.type == TokenType::KW_ARRAY || cur.type == TokenType::KW_LET || cur.type == TokenType::KW_VOID) {
     // starts with type
     if (cur.type == TokenType::KW_LET) {
       return parseVariableDeclaration();
+    }
+    if (cur.type == TokenType::KW_VOID) {
+      return parseFunctionDeclaration();
     }
     advance();
     cur = current();

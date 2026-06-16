@@ -75,7 +75,8 @@ class UnaryExpressionNode: public ExpressionNode {
 class ParameterNode: public ASTNode {
   public:
     TokenType type;
-    std::string name;
+    TokenType subtype;
+    IdentifierNode* name;
 };
 
 class FunctionCallNode: public ExpressionNode {

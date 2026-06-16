@@ -159,15 +159,15 @@ StatementNode:
   VariableDeclarationNode - ok ok
   AssignmentNode - ok ok 
   IndexAssignmentNode - ok ok
-  IfStatementNode - ok
-  ElseIfNode - ok
-  WhileLoopNode - ok
-  ForLoopNode - ok
+  IfStatementNode - ok ok
+  ElseIfNode - ok ok
+  WhileLoopNode - ok ok
+  ForLoopNode - ok ok
   FunctionDeclarationNode - ok
   ReturnNode - ok ok
   ExpressionStatementNode - ok ok
-  BreakNode - ok
-  ContinueNode - ok
+  BreakNode - ok ok
+  ContinueNode - ok ok
 
 ParameterNode
 
