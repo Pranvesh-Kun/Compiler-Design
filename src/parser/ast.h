@@ -147,6 +147,14 @@ class ReturnNode: public StatementNode {
     ExpressionNode* value;
 };
 
+class BreakNode: public StatementNode {
+  public:
+};
+
+class ContinueNode: public StatementNode {
+  public:
+};
+
 class ExpressionStatementNode: public StatementNode {
   public:
     ExpressionNode* expression;

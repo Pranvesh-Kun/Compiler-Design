@@ -31,6 +31,10 @@ Token Parser::current() {
   return tokens[ind];
 }
 
+bool Parser::check(TokenType type) {
+  return (current().type == type);
+}
+
 IdentifierNode* Parser::parseIdentifier() {
   Token cur = current();
   if (cur.type != TokenType::IDENTIFIER) parser_error(TokenType::IDENTIFIER);
@@ -147,6 +151,65 @@ ReturnNode* Parser::parseReturn() {
   return node;
 }
 
+BreakNode* Parser::parseBreak() {
+  BreakNode* node = new BreakNode();
+  advance();
+  return node;
+}
+
+ContinueNode* Parser::parseContinue() {
+  ContinueNode* node = new ContinueNode();
+  advance();
+  return node;
+}
+
+ElseIfNode* Parser::parseElseIf() {
+  ElseIfNode* node = new ElseIfNode();
+  advance();
+  if (current().type != TokenType::L_PAREN) parser_error(TokenType::L_PAREN);
+  advance();
+  node->condition = parseExpression();
+  if (current().type != TokenType::R_PAREN) parser_error(TokenType::R_PAREN);
+  advance();
+  if (current().type != TokenType::L_CURLY) parser_error(TokenType::L_CURLY);
+  advance();
+  while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+    node->codeblock.push_back(parseStatement());
+  }
+  advance();
+  return node;
+}
+
+IfStatementNode* Parser::parseIfStatement() {
+  IfStatementNode* node = new IfStatementNode();
+  advance();
+  if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+  advance();
+  node->condition = parseExpression();
+  if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+  advance();
+  if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
+  advance();
+  while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+    node->codeblock.push_back(parseStatement());
+  } 
+  advance();
+  while (check(TokenType::KW_ELSE)) {
+    advance();
+    if (check(TokenType::KW_IF)) node->elseif.push_back(parseElseIf());
+    else {
+      if (!check(TokenType::L_CURLY)) parser_error(TokenType::L_CURLY);
+      advance();
+      while (!check(TokenType::R_CURLY) && !check(TokenType::END_OF_FILE)) {
+        node->elseblock.push_back(parseStatement());
+      }
+      advance();
+      break;
+    }
+  }
+  return node;
+}
+
 StatementNode* Parser::parseStatement() {
   Token cur = current();
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING
@@ -168,6 +231,12 @@ StatementNode* Parser::parseStatement() {
       ind--;
       return parseVariableDeclaration();
     }
+  }
+  else if (check(TokenType::KW_BREAK)) {
+    return parseBreak();
+  }
+  else if (check(TokenType::KW_CONTINUE)) {
+    return parseContinue();
   }
   else if (cur.type ==  TokenType::KW_IF) {
     return parseIfStatement();

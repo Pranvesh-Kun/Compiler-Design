@@ -27,9 +27,12 @@ class Parser {
     FunctionDeclarationNode* parseFunctionDeclaration();
     ReturnNode* parseReturn();
     ExpressionStatementNode* parseExpressionStatement();
+    BreakNode* parseBreak();
+    ContinueNode* parseContinue();
     void advance();
     Token peek();
     Token current();
+    bool check(TokenType);
     void parser_error(TokenType expected);
     void parser_error_statement();
 

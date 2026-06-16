@@ -118,6 +118,8 @@ while (condition) {
 
 }
 
+break and continue are supported.
+
 Functions:
 
 int add(int a, int b) {

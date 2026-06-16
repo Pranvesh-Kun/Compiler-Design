@@ -166,6 +166,8 @@ StatementNode:
   FunctionDeclarationNode - ok
   ReturnNode - ok ok
   ExpressionStatementNode - ok ok
+  BreakNode - ok
+  ContinueNode - ok
 
 ParameterNode
 
