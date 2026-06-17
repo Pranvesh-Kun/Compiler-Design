@@ -150,14 +150,16 @@ ExpressionNode:
   BoolLiteralNode - ok ok 
   StringLiteralNode - ok ok
   BinaryExpressionNode - ok
-  UnaryExpressionNode - ok
-  FunctionCallNode - ok
-  ArrayLiteralNode - ok
-  IndexAccessNode - ok
+  UnaryExpressionNode - ok ok
+  FunctionCallNode - ok ok
+  ArrayLiteralNode - ok ok
+  IndexAccessNode - ok ok
 
 StatementNode:
   VariableDeclarationNode - ok ok
   AssignmentNode - ok ok 
+  IncrementNode - ok ok
+  DecrementNode - ok ok
   IndexAssignmentNode - ok ok
   IfStatementNode - ok ok
   ElseIfNode - ok ok

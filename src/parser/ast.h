@@ -100,6 +100,16 @@ class AssignmentNode: public StatementNode {
     ExpressionNode* value;
 };
 
+class IncrementNode: public StatementNode {
+  public:
+    IdentifierNode* name;
+};
+
+class DecrementNode: public StatementNode {
+  public:
+    IdentifierNode* name;
+};
+
 class IndexAssignmentNode: public StatementNode {
   public:
     IdentifierNode* object;

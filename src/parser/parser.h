@@ -12,8 +12,8 @@ class Parser {
     FloatLiteralNode* parseFloatLiteral();
     BoolLiteralNode* parseBoolLiteral();
     StringLiteralNode* parseStringLiteral();
-    BinaryExpressionNode* parseBinaryExpression();
-    UnaryExpressionNode* parseUnaryExpression();
+    ExpressionNode* parseBinaryExpression();
+    ExpressionNode* parseUnaryExpression();
     FunctionCallNode* parseFunctionCall();
     ArrayLiteralNode* parseArrayLiteral();
     IndexAccessNode* parseIndexAccess();
@@ -31,6 +31,8 @@ class Parser {
     ContinueNode* parseContinue();
     ParameterNode* parseParameter();
     ExpressionNode* parsePrimary();
+    IncrementNode* parseIncrement();
+    DecrementNode* parseDecrement();
     void advance();
     Token peek();
     Token current();

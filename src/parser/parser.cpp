@@ -79,13 +79,95 @@ StringLiteralNode* Parser::parseStringLiteral() {
   return node;
 }
 
+FunctionCallNode* Parser::parseFunctionCall() {
+  FunctionCallNode* node = new FunctionCallNode();
+  node->name = parseIdentifier();
+  if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+  advance();
+  while (!check(TokenType::R_PAREN)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_PAREN);
+    node->arguments.push_back(parseExpression());
+    if (check(TokenType::COMMA)) {
+      if (peek().type == TokenType::R_PAREN) parser_error(TokenType::R_PAREN);
+      advance();
+    }
+    else if (!check(TokenType::R_PAREN)) parser_error(TokenType::COMMA);
+  }
+  advance();
+  return node;
+}
+
+IndexAccessNode* Parser::parseIndexAccess() {
+  IndexAccessNode* node = new IndexAccessNode();
+  node->object = parseIdentifier();
+  if (!check(TokenType::L_SQUARE)) parser_error(TokenType::L_SQUARE);
+  advance();
+  node->index = parseExpression();
+  if (!check(TokenType::R_SQUARE)) parser_error(TokenType::R_SQUARE);
+  advance();
+  return node;
+}
+
+ArrayLiteralNode* Parser::parseArrayLiteral() {
+  ArrayLiteralNode* node = new ArrayLiteralNode();
+  advance();
+  while (!check(TokenType::R_SQUARE)) {
+    if (check(TokenType::END_OF_FILE)) parser_error(TokenType::END_OF_FILE);
+    node->elements.push_back(parseExpression());
+    if (check(TokenType::COMMA)) {
+      if (peek().type == TokenType::R_SQUARE) parser_error(TokenType::R_SQUARE);
+      advance();
+    }
+    else if (!check(TokenType::R_SQUARE)) parser_error(TokenType::COMMA);
+  }
+  advance();
+  return node;
+}
+
 ExpressionNode* Parser::parsePrimary() {
   if (check(TokenType::INT_LITERAL)) return parseIntLiteral();
   if (check(TokenType::FLOAT_LITERAL)) return parseFloatLiteral();
   if (check(TokenType::BOOL_LITERAL_FALSE) || check(TokenType::BOOL_LITERAL_TRUE)) return parseBoolLiteral();
   if (check(TokenType::STR_LITERAL)) return parseStringLiteral();
-  if (check(TokenType::IDENTIFIER)) return parseIdentifier();
+  if (check(TokenType::IDENTIFIER)) {
+    if (peek().type == TokenType::L_PAREN) return parseFunctionCall();
+    if (peek().type == TokenType::L_SQUARE) return parseIndexAccess();
+    return parseIdentifier();
+  }
+  if (check(TokenType::L_PAREN)) {
+    advance();
+    ExpressionNode* node = parseExpression();
+    if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+    advance();
+    return node;
+  }
+  if (check(TokenType::L_SQUARE)) return parseArrayLiteral();
   parser_error_expression();
+}
+
+ExpressionNode* Parser::parseUnaryExpression() {
+  if (check(TokenType::KW_NOT)) {
+    UnaryExpressionNode* node = new UnaryExpressionNode();
+    node->operation = TokenType::KW_NOT;
+    advance();
+    node->operand = parseUnaryExpression();
+    return node;
+  }
+  return parsePrimary();
+}
+
+IncrementNode* Parser::parseIncrement() {
+  IncrementNode* node = new IncrementNode();
+  node->name = parseIdentifier();
+  advance();
+  return node;
+}
+
+DecrementNode* Parser::parseDecrement() {
+  DecrementNode* node = new DecrementNode();
+  node->name = parseIdentifier();
+  advance();
+  return node;
 }
 
 VariableDeclarationNode* Parser::parseVariableDeclaration() {
@@ -335,7 +417,10 @@ FunctionDeclarationNode* Parser::parseFunctionDeclaration() {
   while (!check(TokenType::R_PAREN)) {
     if (check(TokenType::END_OF_FILE)) parser_error(TokenType::R_PAREN);
     node->parameters.push_back(parseParameter());
-    if (check(TokenType::COMMA))  advance();
+    if (check(TokenType::COMMA)) {
+      if (peek().type == TokenType::R_PAREN) parser_error(TokenType::R_PAREN);
+      advance();
+    }
     else if (!check(TokenType::R_PAREN)) parser_error(TokenType::COMMA);
   }
   advance();
@@ -398,6 +483,12 @@ StatementNode* Parser::parseStatement() {
     }
     else if (peek().type == TokenType::L_SQUARE) {
       return parseIndexAssignment();
+    }
+    else if (peek().type == TokenType::INCREMENT) {
+      return parseIncrement();
+    }
+    else if (peek().type == TokenType::DECREMENT) {
+      return parseDecrement();
     }
     else {
       return parseAssignment();

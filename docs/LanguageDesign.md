@@ -133,6 +133,7 @@ Operators:
 
 Increment/Decrement:
 i++ and i-- does exist, exactly like in c++.
+but not ++i and --i.
 
 Arithmetic Operators:
 
