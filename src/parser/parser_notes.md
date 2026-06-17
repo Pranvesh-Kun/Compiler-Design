@@ -144,16 +144,16 @@ ExpressionStatementNode:
 Hierarchy:
 
 ExpressionNode:
-  IdentifierNode
-  IntLiteralNode
-  FloatLiteralNode
-  BoolLiteralNode
-  StringLiteralNode
-  BinaryExpressionNode
-  UnaryExpressionNode
-  FunctionCallNode
-  ArrayLiteralNode
-  IndexAccessNode
+  IdentifierNode - ok ok
+  IntLiteralNode - ok ok 
+  FloatLiteralNode - ok ok
+  BoolLiteralNode - ok ok 
+  StringLiteralNode - ok ok
+  BinaryExpressionNode - ok
+  UnaryExpressionNode - ok
+  FunctionCallNode - ok
+  ArrayLiteralNode - ok
+  IndexAccessNode - ok
 
 StatementNode:
   VariableDeclarationNode - ok ok
@@ -169,7 +169,7 @@ StatementNode:
   BreakNode - ok ok
   ContinueNode - ok ok
 
-ParameterNode
+ParameterNode - ok ok
 
 
 

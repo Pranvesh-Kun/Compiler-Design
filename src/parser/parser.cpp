@@ -18,6 +18,12 @@ void Parser::parser_error_statement() {
   abort();
 }
 
+void Parser::parser_error_expression() {
+  std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+  std::cout << "Expected an expression, Found: " << tokenmap[current().type] << "\n";
+  abort();
+}
+
 void Parser::advance() {
   ind++;  
 }
@@ -42,6 +48,44 @@ IdentifierNode* Parser::parseIdentifier() {
   node->name = cur.text;
   advance();
   return node;
+}
+
+IntLiteralNode* Parser::parseIntLiteral() {
+  IntLiteralNode* node = new IntLiteralNode();
+  node->value = std::stoi(current().text);
+  advance();
+  return node;
+}
+
+FloatLiteralNode* Parser::parseFloatLiteral() {
+  FloatLiteralNode* node = new FloatLiteralNode();
+  node->value = std::stof(current().text);
+  advance();
+  return node;
+}
+
+BoolLiteralNode* Parser::parseBoolLiteral() {
+  BoolLiteralNode* node = new BoolLiteralNode();
+  if (check(TokenType::BOOL_LITERAL_FALSE)) node->value = false;
+  else node->value = true;
+  advance();
+  return node;
+}
+
+StringLiteralNode* Parser::parseStringLiteral() {
+  StringLiteralNode* node = new StringLiteralNode();
+  node->value = current().text;
+  advance();
+  return node;
+}
+
+ExpressionNode* Parser::parsePrimary() {
+  if (check(TokenType::INT_LITERAL)) return parseIntLiteral();
+  if (check(TokenType::FLOAT_LITERAL)) return parseFloatLiteral();
+  if (check(TokenType::BOOL_LITERAL_FALSE) || check(TokenType::BOOL_LITERAL_TRUE)) return parseBoolLiteral();
+  if (check(TokenType::STR_LITERAL)) return parseStringLiteral();
+  if (check(TokenType::IDENTIFIER)) return parseIdentifier();
+  parser_error_expression();
 }
 
 VariableDeclarationNode* Parser::parseVariableDeclaration() {

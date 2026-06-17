@@ -30,12 +30,14 @@ class Parser {
     BreakNode* parseBreak();
     ContinueNode* parseContinue();
     ParameterNode* parseParameter();
+    ExpressionNode* parsePrimary();
     void advance();
     Token peek();
     Token current();
     bool check(TokenType);
     void parser_error(TokenType expected);
     void parser_error_statement();
+    void parser_error_expression();
 
   public:
     ProgramNode* parseProgram();
