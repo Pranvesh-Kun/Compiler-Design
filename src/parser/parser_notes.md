@@ -149,7 +149,6 @@ ExpressionNode:
   FloatLiteralNode - ok ok
   BoolLiteralNode - ok ok 
   StringLiteralNode - ok ok
-  BinaryExpressionNode - ok
   UnaryExpressionNode - ok ok
   FunctionCallNode - ok ok
   ArrayLiteralNode - ok ok
@@ -172,6 +171,45 @@ StatementNode:
   ContinueNode - ok ok
 
 ParameterNode - ok ok
+
+We are parsing expressiong recursively from higher precedence to lower precedence (lower calls higher). 
+
+parseExpression
+->parseOr
+->parseAnd
+->parseEquality
+->parseComparison
+->parseTerm
+->parseFactor
+->parseUnaryExpression
+->parsePrimary
+
+from lowest to highest, the precendence is as follows.
+
+or
+ans
+== !=
+>= > < <=
++ -
+* / %
+not
+
+so, we do this, if its a * b * c
+
+first we create tree for a * b,
+left node is a -> evaluated by unaryexp(), then b is right, by unaryexp().
+now (a*b) becomes left node, new tree is created again with c as right.
+so:
+
+*:
+left: *:
+        left: a
+        right: b
+right: c
+
+is the final tree.
+
+This is how we evaluate the expressions.
 
 
 

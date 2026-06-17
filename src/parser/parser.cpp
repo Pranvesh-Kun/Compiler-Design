@@ -156,6 +156,89 @@ ExpressionNode* Parser::parseUnaryExpression() {
   return parsePrimary();
 }
 
+ExpressionNode* Parser::parseFactor() {
+  ExpressionNode* left = parseUnaryExpression();
+  while (check(TokenType::ASTERISK) || check(TokenType::SLASH) || check(TokenType::MOD)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseUnaryExpression();
+    left = node;
+  }
+  return left;
+}
+
+ExpressionNode* Parser::parseTerm() {
+  ExpressionNode* left = parseFactor();
+  while (check(TokenType::PLUS) || check(TokenType::MINUS)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseFactor();
+    left = node;
+  }
+  return left;
+}
+
+ExpressionNode* Parser::parseComparison() {
+  ExpressionNode* left = parseTerm();
+  while (check(TokenType::GRT_EQUALS) || check(TokenType::GRT_THAN)
+  || check(TokenType::LESS_EQUALS) || check(TokenType::LESS_THAN)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseTerm();
+    left = node;
+  }
+  return left;
+}
+
+ExpressionNode* Parser::parseEquality() {
+  ExpressionNode* left = parseComparison();
+  while (check(TokenType::EQUALS) || check(TokenType::NOT_EQUALS)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseComparison();
+    left = node;
+  }
+  return left; 
+}
+
+ExpressionNode* Parser::parseAnd() {
+  ExpressionNode* left = parseEquality();
+  while (check(TokenType::KW_AND)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseEquality();
+    left = node;
+  }
+  return left; 
+}
+
+ExpressionNode* Parser::parseOr() {
+  ExpressionNode* left = parseAnd();
+  while (check(TokenType::KW_OR)) {
+    BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->left = left;
+    node->operation = current().type;
+    advance();
+    node->right = parseAnd();
+    left = node;
+  }
+  return left; 
+}
+
+ExpressionNode* Parser::parseExpression() {
+  return parseOr();
+}
+
 IncrementNode* Parser::parseIncrement() {
   IncrementNode* node = new IncrementNode();
   node->name = parseIdentifier();

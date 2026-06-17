@@ -98,6 +98,8 @@ else {
 
 }
 
+(a < b < c) will be allowed.
+
 Loops:
 
 Array iteration:
