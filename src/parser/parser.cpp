@@ -328,9 +328,25 @@ VariableDeclarationNode* Parser::parseVariableDeclaration() {
 AssignmentNode* Parser::parseAssignment() {
     AssignmentNode* node = new AssignmentNode();
     node->name = parseIdentifier();
-    if (current().type != TokenType::ASSIGN) parser_error(TokenType::ASSIGN);
-    advance();
-    node->value = parseExpression();
+    if (current().type != TokenType::ASSIGN && !check(TokenType::PLUS_EQUAL) && !check(TokenType::ASTERISK_EQUAL) 
+    && !check(TokenType::MINUS_EQUAL) && !check(TokenType::MOD_EQUAL) && !check(TokenType::SLASH_EQUAL)) parser_error(TokenType::ASSIGN);
+    if (check(TokenType::PLUS_EQUAL) || check(TokenType::SLASH_EQUAL) || check(TokenType::MINUS_EQUAL) || check(TokenType::MOD_EQUAL)
+    || check(TokenType::ASTERISK_EQUAL)) {
+      BinaryExpressionNode* temp = new BinaryExpressionNode();
+      if (check(TokenType::PLUS_EQUAL)) temp->operation = TokenType::PLUS;
+      else if (check(TokenType::MINUS_EQUAL)) temp->operation = TokenType::MINUS;
+      else if (check(TokenType::ASTERISK_EQUAL)) temp->operation = TokenType::ASTERISK;
+      else if (check(TokenType::SLASH_EQUAL)) temp->operation = TokenType::SLASH;
+      else if (check(TokenType::MOD_EQUAL)) temp->operation = TokenType::MOD;
+      advance();
+      temp->left = node->name;
+      temp->right = parseExpression();
+      node->value = temp;
+    }
+    else {
+      advance();
+      node->value = parseExpression();
+    }
     return node;
 }
 
