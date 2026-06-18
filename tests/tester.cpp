@@ -1,5 +1,6 @@
 #include "../src/parser/parser.h"
 #include "../src/lexer/lexer.h"
+#include "astprint.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -14,4 +15,5 @@ int main() {
   lex.printtokens();
   Parser parser(tokens); 
   ProgramNode* root = parser.parseProgram();
+  printAST(root, 0);
 }

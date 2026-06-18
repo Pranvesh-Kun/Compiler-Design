@@ -1,82 +1,108 @@
-# Single line comment
-
-###
-Multi line comment
-with multiple lines
-###
+# Variable declarations
 
 int x = 5
-float pi = 3.14159
+float pi = 3.14
 bool flag = true
-bool other = false
+string name = "Tony"
 
-string empty = ""
-string msg = "Hello World"
-string quote = "He said \"Hello\""
-string slash = "C:\\Users\\Tony"
-string newline = "Line1\nLine2"
-string tab = "A\tB"
+let inferred = 100
 
-let count = 0
+int defaultInt
+float defaultFloat
+bool defaultBool
+string defaultString
 
-count++
-count--
-count += 10
-count -= 5
-count *= 2
-count /= 3
-count %= 4
+array(int) numbers = [1,2,3,4,5]
+array(string) names = ["luffy", "zoro"]
+array(float) prices[10]
 
-if (count >= 5) {
-    output("greater")
+# Assignments
+
+x = 10
+x += 5
+x -= 2
+x *= 3
+x /= 2
+x %= 4
+
+# Increment / decrement
+
+x++
+x--
+
+# Index access and assignment
+
+x = numbers[2]
+numbers[0] = 999
+
+# Unary expression
+
+flag = not false
+
+# Binary expressions
+
+x = 1 + 2 * 3
+flag = x > 5 and not false
+flag = x <= 100 or x == 0
+
+# Function calls
+
+output(x)
+output(numbers[0])
+input(name)
+
+# If / else if / else
+
+if (x > 100) {
+    output("big")
 }
-
-if (count <= 100) {
+else if (x > 50) {
+    output("medium")
+}
+else {
     output("small")
 }
 
-if (count != 50) {
-    output("not fifty")
+# While
+
+while (x > 0) {
+    x--
+    if (x == 3) {
+        continue
+    }
+    if (x == 1) {
+        break
+    }
 }
 
-if (count == 42) {
-    output("answer")
-}
-else {
-    output("not answer")
-}
-
-array(int) numbers = [1,2,3,4,5]
+# For
 
 for (i in numbers) {
     output(i)
 }
 
-while (count > 0) {
-    count--
+# Function declaration
+
+int add(int a, int b) {
+    return a + b
 }
 
-let _temp = 123
-let hello_world_123 = 456
+# Array parameter function
 
-x += y*z
-y = (x+y)*(z-1)
+void printAll(array(int) arr) {
+    for (i in arr) {
+        output(i)
+    }
+}
 
-input(name)
-output(name)
+# Function call inside expression
 
-###
-Another comment block
+let answer = add(10, 20)
 
-with empty lines
+# Nested expression
 
-inside it
-###
+let result = (x + 5) * (10 - 2) / 4
 
-string symbols = "(){}[]+=-=*=/=%=<><===!=&&||"
+# Nested array literal
 
-string s = ""
-
-string s = "\""
-string s = "\\"
-string s = "\\"
+array(int) temp = [1,2,3]
