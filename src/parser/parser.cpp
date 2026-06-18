@@ -81,7 +81,14 @@ StringLiteralNode* Parser::parseStringLiteral() {
 
 FunctionCallNode* Parser::parseFunctionCall() {
   FunctionCallNode* node = new FunctionCallNode();
-  node->name = parseIdentifier();
+  if (check(TokenType::KW_OUTPUT) || check(TokenType::KW_INPUT)) {
+    IdentifierNode* temp = new IdentifierNode();
+    if (check(TokenType::KW_INPUT)) temp->name = "input";
+    else temp->name = "output";
+    node->name = temp;
+    advance();
+  }
+  else node->name = parseIdentifier();
   if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
   advance();
   while (!check(TokenType::R_PAREN)) {
@@ -134,6 +141,7 @@ ExpressionNode* Parser::parsePrimary() {
     if (peek().type == TokenType::L_SQUARE) return parseIndexAccess();
     return parseIdentifier();
   }
+  if (check(TokenType::KW_OUTPUT) || check(TokenType::KW_INPUT)) return parseFunctionCall(); 
   if (check(TokenType::L_PAREN)) {
     advance();
     ExpressionNode* node = parseExpression();
@@ -143,6 +151,7 @@ ExpressionNode* Parser::parsePrimary() {
   }
   if (check(TokenType::L_SQUARE)) return parseArrayLiteral();
   parser_error_expression();
+  return nullptr;
 }
 
 ExpressionNode* Parser::parseUnaryExpression() {
@@ -538,7 +547,7 @@ StatementNode* Parser::parseStatement() {
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING
   || cur.type == TokenType::KW_BOOL || cur.type == TokenType::KW_ARRAY || cur.type == TokenType::KW_LET || cur.type == TokenType::KW_VOID) {
     // starts with type
-    if (cur.type == TokenType::KW_LET) {
+    if (cur.type == TokenType::KW_LET || cur.type == TokenType::KW_ARRAY) {
       return parseVariableDeclaration();
     }
     if (cur.type == TokenType::KW_VOID) {
@@ -593,9 +602,11 @@ StatementNode* Parser::parseStatement() {
       return parseAssignment();
     }
   }
+  else if (check(TokenType::KW_OUTPUT) || check(TokenType::KW_INPUT)) return parseExpressionStatement();
   else {
     parser_error_statement();
   }
+  return nullptr;
 }
 
 ProgramNode* Parser::parseProgram() {

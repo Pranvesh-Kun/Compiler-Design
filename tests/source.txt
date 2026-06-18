@@ -46,9 +46,9 @@ else {
     output("not answer")
 }
 
-array numbers = [1,2,3,4,5]
+array(int) numbers = [1,2,3,4,5]
 
-for i in numbers {
+for (i in numbers) {
     output(i)
 }
 
@@ -59,8 +59,8 @@ while (count > 0) {
 let _temp = 123
 let hello_world_123 = 456
 
-x+y*z
-(x+y)*(z-1)
+x += y*z
+y = (x+y)*(z-1)
 
 input(name)
 output(name)

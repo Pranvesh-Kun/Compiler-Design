@@ -59,7 +59,7 @@ enum class TokenType {
 };
 
 
-std::map<TokenType, std::string> tokenmap = {
+inline std::map<TokenType, std::string> tokenmap = {
     {TokenType::KW_INT, "KW_INT"},
     {TokenType::KW_FLOAT, "KW_FLOAT"},
     {TokenType::KW_IF, "KW_IF"},

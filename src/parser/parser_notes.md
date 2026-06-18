@@ -211,6 +211,472 @@ is the final tree.
 
 This is how we evaluate the expressions.
 
+# Parser Phase Notes
+
+## Goal
+
+Convert token stream from lexer into an Abstract Syntax Tree (AST).
+
+---
+
+## Parser Structure
+
+### Program
+
+```text
+Program
+ ├─ Statement
+ ├─ Statement
+ └─ Statement
+```
+
+```cpp
+parseProgram()
+```
+
+Loops until EOF and repeatedly calls:
+
+```cpp
+parseStatement()
+```
+
+---
+
+## Statement Parsing
+
+### Variable Declarations
+
+Supported:
+
+```text
+int x = 5
+float pi = 3.14
+bool flag = true
+string s = "hello"
+
+int x
+float y
+string z
+
+let x = 5
+
+array(int) arr[10]
+array(int) arr = [1,2,3]
+```
+
+Function:
+
+```cpp
+parseVariableDeclaration()
+```
+
+Special handling:
+
+* let requires initializer
+* arrays store:
+
+  * type
+  * subtype
+  * optional size
+  * optional initializer
+
+---
+
+### Assignments
+
+Supported:
+
+```text
+x = 5
+
+x += 5
+x -= 5
+x *= 5
+x /= 5
+x %= 5
+```
+
+Function:
+
+```cpp
+parseAssignment()
+```
+
+Compound assignments are desugared into:
+
+```text
+x += y
+
+↓
+
+x = x + y
+```
+
+using BinaryExpressionNode.
+
+---
+
+### Index Assignment
+
+Supported:
+
+```text
+arr[0] = 10
+```
+
+Function:
+
+```cpp
+parseIndexAssignment()
+```
+
+---
+
+### Increment / Decrement
+
+Supported:
+
+```text
+x++
+x--
+```
+
+Implemented as statements:
+
+```cpp
+IncrementNode
+DecrementNode
+```
+
+Functions:
+
+```cpp
+parseIncrement()
+parseDecrement()
+```
+
+---
+
+### If Statements
+
+Supported:
+
+```text
+if (...) {
+}
+
+else if (...) {
+}
+
+else {
+}
+```
+
+Functions:
+
+```cpp
+parseIfStatement()
+parseElseIf()
+```
+
+Stores:
+
+* condition
+* codeblock
+* elseif list
+* else block
+
+---
+
+### While Loops
+
+Supported:
+
+```text
+while (...) {
+}
+```
+
+Function:
+
+```cpp
+parseWhileLoop()
+```
+
+---
+
+### For Loops
+
+Supported:
+
+```text
+for (i in arr) {
+}
+```
+
+Function:
+
+```cpp
+parseForLoop()
+```
+
+Stores:
+
+* iterator
+* iterable expression
+* codeblock
+
+---
+
+### Functions
+
+Supported:
+
+```text
+int add(int a, int b) {
+}
+
+void test() {
+}
+```
+
+Functions:
+
+```cpp
+parseFunctionDeclaration()
+parseParameter()
+```
+
+Parameters support:
+
+```text
+int
+float
+bool
+string
+array(type)
+```
+
+---
+
+### Return
+
+Supported:
+
+```text
+return expr
+```
+
+Function:
+
+```cpp
+parseReturn()
+```
+
+---
+
+### Break / Continue
+
+Supported:
+
+```text
+break
+continue
+```
+
+Functions:
+
+```cpp
+parseBreak()
+parseContinue()
+```
+
+---
+
+### Expression Statements
+
+Supported:
+
+```text
+foo()
+input(x)
+output(x)
+```
+
+Function:
+
+```cpp
+parseExpressionStatement()
+```
+
+---
+
+## Expression Parsing
+
+Implemented using recursive descent + precedence climbing.
+
+### Precedence Order
+
+Lowest → Highest
+
+```text
+or
+and
+== !=
+< > <= >=
++ -
+* / %
+not
+primary
+```
+
+---
+
+### Call Chain
+
+```cpp
+parseExpression()
+  -> parseOr()
+  -> parseAnd()
+  -> parseEquality()
+  -> parseComparison()
+  -> parseTerm()
+  -> parseFactor()
+  -> parseUnaryExpression()
+  -> parsePrimary()
+```
+
+---
+
+## Primary Expressions
+
+Supported:
+
+```text
+123
+3.14
+true
+false
+"hello"
+
+x
+
+foo(...)
+
+arr[0]
+
+[1,2,3]
+
+(expr)
+```
+
+Functions:
+
+```cpp
+parseIntLiteral()
+parseFloatLiteral()
+parseBoolLiteral()
+parseStringLiteral()
+parseIdentifier()
+parseFunctionCall()
+parseIndexAccess()
+parseArrayLiteral()
+parsePrimary()
+```
+
+---
+
+## Unary Expressions
+
+Supported:
+
+```text
+not x
+not not x
+```
+
+Function:
+
+```cpp
+parseUnaryExpression()
+```
+
+AST:
+
+```text
+UnaryExpressionNode
+```
+
+---
+
+## Binary Expressions
+
+Built inside:
+
+```cpp
+parseFactor()
+parseTerm()
+parseComparison()
+parseEquality()
+parseAnd()
+parseOr()
+```
+
+Pattern:
+
+```cpp
+left = lower_precedence()
+
+while(operator_found) {
+    node->left = left
+    node->right = lower_precedence()
+
+    left = node
+}
+
+return left
+```
+
+Key idea:
+
+```text
+left = expression parsed so far
+```
+
+This naturally enforces operator precedence.
+
+---
+
+## Error Handling
+
+Implemented:
+
+```cpp
+parser_error(expected_token)
+parser_error_statement()
+parser_error_expression()
+```
+
+Includes:
+
+* line number
+* column number
+* expected token
+* actual token
+
+---
+
+## Important Lessons Learned
+
+1. Parser checks syntax only.
+2. Type checking belongs to semantic analysis.
+3. Expression parser returns ExpressionNode*.
+4. BinaryExpressionNode is built inside precedence functions.
+5. UnaryExpressionNode recursively parses unary expressions.
+6. Operator precedence is enforced by parser structure.
+7. AST nodes represent structure, not execution.
+
+
 
 
 

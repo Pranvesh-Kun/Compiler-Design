@@ -1,4 +1,5 @@
-#include "lexer.h"
+#include "../src/parser/parser.h"
+#include "../src/lexer/lexer.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -8,8 +9,9 @@ int main() {
   std::stringstream buffer;
   buffer << file.rdbuf();
   std::string code = buffer.str();
-  // std::string code = "int x = 5";
   Lexer lex = Lexer(code);
-  lex.tokenize();
+  std::vector<Token> tokens = lex.tokenize();
   lex.printtokens();
+  Parser parser(tokens); 
+  ProgramNode* root = parser.parseProgram();
 }
