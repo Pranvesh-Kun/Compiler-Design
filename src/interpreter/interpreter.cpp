@@ -127,6 +127,50 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     val.boolval = !(operand.boolval);
     return val;
   }
+  else if (auto n = dynamic_cast<IdentifierNode*>(node)) {
+    auto it = variables.find(n->name);
+    if (it == variables.end()) interpreter_error("Identifier \"" + n->name + "\" is undefined.");
+    return it->second;
+  }
+  else if (auto n = dynamic_cast<IndexAccessNode*>(node)) {
+    auto it = variables.find(n->object->name);
+    if (it == variables.end()) interpreter_error("Identifier \"" + n->object->name + "\" is undefined.");
+    Value ind = evaluate(n->index);
+    if (ind.type != ValueType::INT) interpreter_error("Array index value must be Integer.");
+    if (it->second.type != ValueType::ARRAY) interpreter_error("Identifier \"" + n->object->name + "\" must be Array.");
+    if (ind.intval >= it->second.size || ind.intval < 0) interpreter_error("Array index out of bounds.");
+    return it->second.arrayval[ind.intval];
+  }
+  else if (auto n = dynamic_cast<FunctionCallNode*>(node)) {
+    if (n->name->name == "input") {
+      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.");
+      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.");
+      if (dynamic_cast<IdentifierNode*>(n->arguments[0]) == nullptr) interpreter_error("input() expects a variable.");
+      auto id = dynamic_cast<IdentifierNode*>(n->arguments[0]);
+      if (variables.find(id->name) == variables.end()) interpreter_error("Identifier \"" + id->name + "\" is undefined.");
+      auto it = variables.find(id->name);
+      if (it->second.type == ValueType::INT) std::cin >> it->second.intval;
+      if (it->second.type == ValueType::FLOAT) std::cin >> it->second.floatval;
+      if (it->second.type == ValueType::STRING) std::cin >> it->second.stringval;
+      if (it->second.type == ValueType::BOOL) std::cin >> it->second.boolval; 
+      Value temp;
+      temp.type = ValueType::VOID;
+      return temp;
+    }
+    else if (n->name->name == "output") {
+      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.");
+      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.");
+      Value val = evaluate(n->arguments[0]);
+      if (val.type == ValueType::INT) std::cout << val.intval;
+      if (val.type == ValueType::BOOL) std::cout << std::boolalpha << val.boolval;
+      if (val.type == ValueType::STRING) std::cout << val.stringval;
+      if (val.type == ValueType::FLOAT) std::cout << val.floatval;
+      Value temp;
+      temp.type = ValueType::VOID;
+      return temp;
+    }
+    interpreter_error("Functions are not yet supported.");
+  }
   interpreter_error("Unknown expression node");
 }
 

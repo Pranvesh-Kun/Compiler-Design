@@ -85,7 +85,7 @@ class FunctionCallNode: public ExpressionNode {
     std::vector<ExpressionNode*> arguments;
 };
 
-class VariableDeclarationNode: public  StatementNode {
+class VariableDeclarationNode: public StatementNode {
   public:
     TokenType type;
     TokenType subtype;
