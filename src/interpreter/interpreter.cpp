@@ -35,6 +35,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     Value val;
     val.type = ValueType::ARRAY;
     for (auto it: n->elements) val.arrayval.push_back(evaluate(it));
+    val.size = n->elements.size();
     return val;
   }
   else if (auto n = dynamic_cast<BinaryExpressionNode*>(node)) {
@@ -172,8 +173,40 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     interpreter_error("Functions are not yet supported.");
   }
   interpreter_error("Unknown expression node");
+  return Value();
 }
 
 void Interpreter::execute(StatementNode* node) {
+  if (auto n = dynamic_cast<VariableDeclarationNode*>(node)) {
+    if (variables.find(n->name->name) != variables.end()) interpreter_error("Variable " + n->name->name + " already declared.");
+    Value val = evaluate(n->initializer);
+    if (val.type == ValueType::INT && n->type != TokenType::KW_INT) interpreter_error("Initializer must be of type integer.");
+    if (val.type == ValueType::FLOAT && n->type != TokenType::KW_FLOAT) interpreter_error("Initializer must be of type float.");
+    if (val.type == ValueType::BOOL && n->type != TokenType::KW_BOOL) interpreter_error("Initializer must be of type boolean.");
+    if (val.type == ValueType::STRING && n->type != TokenType::KW_STRING) interpreter_error("Initializer must be of type string.");
+    if (val.type == ValueType::ARRAY) {
+      if (n->type != TokenType::KW_ARRAY) interpreter_error("Initializer must be an array.");
+      for (auto x: val.arrayval) {
+        if (x.type == ValueType::INT && n->subtype != TokenType::KW_INT) interpreter_error("Array elements must be of type integer.");
+        if (x.type == ValueType::FLOAT && n->subtype != TokenType::KW_FLOAT) interpreter_error("Array elements must be of type float.");
+        if (x.type == ValueType::BOOL && n->subtype != TokenType::KW_BOOL) interpreter_error("Array elements must be of type boolean.");
+        if (x.type == ValueType::STRING && n->subtype != TokenType::KW_STRING) interpreter_error("Array elements must be of type string.");
+      }
+    }
+    variables[n->name->name] = val;
+  }
+  else if (auto n = dynamic_cast<AssignmentNode*>(node)) {
+    if (variables.find(n->name->name) == variables.end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    Value val = evaluate(n->value);
+    Value temp = variables[n->name->name];
+    if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
+    variables[n->name->name] = val;
+  }
+  else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {
+    evaluate(n->expression);
+  }
+}
 
+void Interpreter::execute(ProgramNode* program) {
+  for (auto stmt: program->statements) execute(stmt);
 }

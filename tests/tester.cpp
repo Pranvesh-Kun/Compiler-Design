@@ -1,5 +1,6 @@
 #include "../src/parser/parser.h"
 #include "../src/lexer/lexer.h"
+#include "../src/interpreter/interpreter.h"
 #include "astprint.h"
 #include <fstream>
 #include <sstream>
@@ -16,4 +17,6 @@ int main() {
   Parser parser(tokens); 
   ProgramNode* root = parser.parseProgram();
   printAST(root, 0);
+  Interpreter interpreter;
+  interpreter.execute(root);
 }
