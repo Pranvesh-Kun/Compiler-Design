@@ -1,0 +1,470 @@
+COMPILER LANGUAGE TEST SUITE
+
+==================================================
+TEST 1 - LITERALS
+
+Input:
+
+output(5)
+output(3.14)
+output(true)
+output("hello")
+
+Expected Output:
+
+53.14truehello
+
+Result: PASS
+
+==================================================
+TEST 2 - ARITHMETIC OPERATORS
+
+Input:
+
+output(5 + 2)
+output(5 - 2)
+output(5 * 2)
+output(6 / 2)
+output(7 % 3)
+
+Expected Output:
+
+73231
+
+Result: PASS
+
+==================================================
+TEST 3 - ARITHMETIC TYPE ERROR
+
+Input:
+
+output(5 + true)
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 4 - DIVISION BY ZERO
+
+Input:
+
+output(5 / 0)
+
+Expected:
+
+Interpreter Error: Division by zero.
+
+Result: PASS
+
+==================================================
+TEST 5 - MODULO ON FLOAT
+
+Input:
+
+output(5.0 % 2.0)
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 6 - COMPARISON OPERATORS
+
+Input:
+
+output(5 > 2)
+output(5 < 2)
+output(5 == 5)
+output(5 != 5)
+
+Expected Output:
+
+truefalsetruefalse
+
+Result: PASS
+
+==================================================
+TEST 7 - LOGICAL OPERATORS
+
+Input:
+
+output(true and true)
+output(true and false)
+output(true or false)
+output(not true)
+
+Expected Output:
+
+truefalsetruefalse
+
+Result: PASS
+
+==================================================
+TEST 8 - VARIABLE DECLARATION
+
+Input:
+
+int x = 5
+output(x)
+
+Expected Output:
+
+5
+
+Result: PASS
+
+==================================================
+TEST 9 - UNDEFINED VARIABLE
+
+Input:
+
+output(y)
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 10 - VARIABLE REDECLARATION
+
+Input:
+
+int x = 5
+int x = 10
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 11 - INVALID INITIALIZER TYPE
+
+Input:
+
+int x = "hello"
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 12 - ASSIGNMENT
+
+Input:
+
+int x = 5
+x = 10
+output(x)
+
+Expected Output:
+
+10
+
+Result: PASS
+
+==================================================
+TEST 13 - ASSIGNMENT TYPE MISMATCH
+
+Input:
+
+int x = 5
+x = "hello"
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 14 - ARRAYS
+
+Input:
+
+array(int) nums = [1,2,3]
+output(nums[1])
+
+Expected Output:
+
+2
+
+Result: PASS
+
+==================================================
+TEST 15 - ARRAY ERRORS
+
+Input:
+
+array(int) nums = [1,true,3]
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+Input:
+
+array(int) nums = [1,2,3]
+output(nums[10])
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 16 - IF / ELSE IF / ELSE
+
+Input:
+
+if (true) {
+    output("A")
+}
+
+Expected Output:
+
+A
+
+Result: PASS
+
+Input:
+
+if (false) {
+    output("A")
+}
+else {
+    output("B")
+}
+
+Expected Output:
+
+B
+
+Result: PASS
+
+Input:
+
+if (false) {
+    output("A")
+}
+else if (true) {
+    output("B")
+}
+else {
+    output("C")
+}
+
+Expected Output:
+
+B
+
+Result: PASS
+
+Input:
+
+if (5) {
+}
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 17 - WHILE LOOP
+
+Input:
+
+int x = 0
+
+while (x < 3) {
+    output(x)
+    x += 1
+}
+
+Expected Output:
+
+012
+
+Result: PASS
+
+==================================================
+TEST 18 - BREAK
+
+Input:
+
+while (true) {
+    output(0)
+    break
+}
+
+Expected Output:
+
+0
+
+Result: PASS
+
+Input:
+
+break
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 19 - CONTINUE
+
+Input:
+
+int x = 0
+
+while (x < 3) {
+    x += 1
+    continue
+    output("BAD")
+}
+
+Expected Output:
+
+(no output BAD)
+
+Result: PASS
+
+Input:
+
+continue
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 20 - FOR LOOP
+
+Input:
+
+array(int) nums = [1,2,3]
+
+for (x in nums) {
+    output(x)
+}
+
+Expected Output:
+
+123
+
+Result: PASS
+
+Input:
+
+for (x in 5) {
+}
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 21 - FUNCTIONS
+
+Input:
+
+int add(int a, int b) {
+    return a + b
+}
+
+output(add(2,3))
+
+Expected Output:
+
+5
+
+Result: PASS
+
+==================================================
+TEST 22 - RETURN OUTSIDE FUNCTION
+
+Input:
+
+return 5
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 23 - RECURSION (FACTORIAL)
+
+Input:
+
+int fact(int n) {
+    if (n == 0) {
+        return 1
+    }
+
+    return n * fact(n - 1)
+}
+
+output(fact(5))
+
+Expected Output:
+
+120
+
+Result: PASS
+
+==================================================
+FINAL RESULT
+ALL TESTS PASSED
+
+Completed Features:
+
+✓ Language Design
+✓ Lexer
+✓ Parser
+✓ AST Generation
+✓ AST Printing
+✓ Interpreter
+✓ Variables
+✓ Arrays
+✓ Input / Output
+✓ Runtime Type Checking
+✓ If / Else If / Else
+✓ While Loops
+✓ For Loops
+✓ Break / Continue
+✓ Functions
+✓ Recursion
+
+Compiler Status:
+
+✓ Phase 1 Complete - Language Design
+✓ Phase 2 Complete - Lexer
+✓ Phase 3 Complete - Parser
+✓ Phase 4 Complete - AST
+✓ Phase 5 Complete - Interpreter
+
+Date Completed: June 22 2026 
