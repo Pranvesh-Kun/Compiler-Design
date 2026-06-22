@@ -1,5 +1,5 @@
 #pragma once
-#include "token.h"
+#include "../common/token.h"
 #include <vector>
 
 class Lexer {

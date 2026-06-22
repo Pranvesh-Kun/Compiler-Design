@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include <iostream>
+#include <string>
 
 void Interpreter::interpreter_error(std::string msg) {
   std::cerr << "Interpreter Error: " << msg << "\n";
@@ -35,6 +36,10 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     Value val;
     val.type = ValueType::ARRAY;
     for (auto it: n->elements) val.arrayval.push_back(evaluate(it));
+    ValueType t = val.arrayval[0].type;
+    for (auto it: val.arrayval) {
+      if (it.type != t) interpreter_error("Array elements must be of the same type.");
+    }
     val.size = n->elements.size();
     return val;
   }
@@ -170,7 +175,48 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       temp.type = ValueType::VOID;
       return temp;
     }
-    interpreter_error("Functions are not yet supported.");
+    auto func = functions.find(n->name->name);
+    if (func == functions.end()) interpreter_error("Function '" + n->name->name + "' is undeclared.");
+    FunctionDeclarationNode* f = func->second;
+    if ((int)f->parameters.size() != n->arguments.size()) interpreter_error("Expected " + std::to_string((int)f->parameters.size()) + " arguments, found " + std::to_string((int)n->arguments.size()) + ".");
+    for (int i = 0; i<(int)f->parameters.size(); i++) {
+      Value arg = evaluate(n->arguments[i]);
+      if (f->parameters[i]->type == TokenType::KW_INT && arg.type != ValueType::INT) interpreter_error("Expected parameter type integer.");
+      if (f->parameters[i]->type == TokenType::KW_FLOAT && arg.type != ValueType::FLOAT) interpreter_error("Expected parameter type float.");
+      if (f->parameters[i]->type == TokenType::KW_BOOL && arg.type != ValueType::BOOL) interpreter_error("Expected parameter type boolean.");
+      if (f->parameters[i]->type == TokenType::KW_ARRAY && arg.type != ValueType::ARRAY) interpreter_error("Expected parameter type array.");
+      if (f->parameters[i]->type == TokenType::KW_STRING && arg.type != ValueType::STRING) interpreter_error("Expected parameter type string.");
+      if (f->parameters[i]->type == TokenType::KW_ARRAY && arg.size > 0) {
+        if (f->parameters[i]->subtype == TokenType::KW_INT && arg.arrayval[0].type != ValueType::INT) interpreter_error("Expected parameter array of integer elements.");
+        if (f->parameters[i]->subtype == TokenType::KW_FLOAT && arg.arrayval[0].type != ValueType::FLOAT) interpreter_error("Expected parameter array of float elements.");
+        if (f->parameters[i]->subtype == TokenType::KW_BOOL && arg.arrayval[0].type != ValueType::BOOL) interpreter_error("Expected parameter array of boolean elements.");
+        if (f->parameters[i]->subtype == TokenType::KW_ARRAY && arg.arrayval[0].type != ValueType::ARRAY) interpreter_error("Expected parameter array of array elements.");
+        if (f->parameters[i]->subtype == TokenType::KW_STRING && arg.arrayval[0].type != ValueType::STRING) interpreter_error("Expected parameter array of string elements.");
+      }
+    }
+    std::unordered_map<std::string, Value> exists;
+    for (auto it: f->parameters) {
+      if (variables.find(it->name->name) != variables.end()) exists[it->name->name] = variables[it->name->name];
+    }
+    for (int i = 0; i<(int)f->parameters.size(); i++) {
+      variables[f->parameters[i]->name->name] = evaluate(n->arguments[i]);
+    }
+    try {
+      for (auto stmt: f->body) execute(stmt);
+    }
+    catch (ReturnException& r) {
+      for (auto it: f->parameters) {
+        if (exists.find(it->name->name) != exists.end()) {
+          variables[it->name->name] = exists[it->name->name];
+        }
+        else variables.erase(it->name->name);
+      }
+      return r.value;
+    }
+    interpreter_error("Function without return is not allowed.");
+    Value temp;
+    temp.type = ValueType::VOID;
+    return temp;
   }
   interpreter_error("Unknown expression node");
   return Value();
@@ -205,8 +251,92 @@ void Interpreter::execute(StatementNode* node) {
   else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {
     evaluate(n->expression);
   }
+  else if (auto n = dynamic_cast<IfStatementNode*>(node)) {
+    Value val = evaluate(n->condition);
+    if (val.type != ValueType::BOOL) interpreter_error("If condition must be boolean.");
+    if (val.boolval) {
+      for (auto it: n->codeblock) execute(it);
+      return;
+    }
+    for (auto x: n->elseif) {
+      Value v = evaluate(x->condition);
+      if (v.type != ValueType::BOOL) interpreter_error("Else if condition must be boolean.");
+      if (v.boolval) {
+        for (auto it: x->codeblock) execute(it);
+        return;
+      }      
+    }
+    for (auto it: n->elseblock) execute(it);
+  }
+  else if (auto n = dynamic_cast<WhileLoopNode*>(node)) {
+    Value val = evaluate(n->condition);
+    if (val.type != ValueType::BOOL) interpreter_error("While condition must be boolean.");
+    try {
+      while (val.boolval) {
+        try {
+          for (auto it: n->codeblock) execute(it);
+          val = evaluate(n->condition);
+        }
+        catch (ContinueException&) {
+          val = evaluate(n->condition);
+          continue;
+        }
+      }
+    }
+    catch (BreakException&) {}
+  }
+  else if (auto n = dynamic_cast<ForLoopNode*>(node)) {
+    Value val = evaluate(n->iterable);
+    if (val.type != ValueType::ARRAY) interpreter_error("For loop iterable must be array.");
+    bool existed = variables.find(n->iterator->name) != variables.end();
+    Value old;
+    if (existed) old = variables[n->iterator->name]; 
+    try {
+      for (auto it: val.arrayval) {
+        try {
+          variables[n->iterator->name] = it;
+          for (auto stmt: n->codeblock) execute(stmt);
+        }
+        catch (ContinueException&) {
+          continue;
+        }
+      }
+    }
+    catch (BreakException&) {}
+
+    if (existed) variables[n->iterator->name] = old;
+    else variables.erase(n->iterator->name);
+  }
+  else if (auto n = dynamic_cast<ReturnNode*>(node)) {
+    ReturnException r;
+    r.value = evaluate(n->value);
+    throw r;
+  }
+  else if (auto n = dynamic_cast<BreakNode*>(node)) {
+    BreakException b;
+    throw b;
+  }
+  else if (auto n = dynamic_cast<ContinueNode*>(node)) {
+    ContinueException c;
+    throw c;
+  }
+  else if (auto n = dynamic_cast<FunctionDeclarationNode*>(node)) {
+    if (functions.find(n->name->name) != functions.end()) interpreter_error("Function '" + n->name->name + "' is already declared.");
+    functions[n->name->name] = n;
+  }
 }
 
 void Interpreter::execute(ProgramNode* program) {
-  for (auto stmt: program->statements) execute(stmt);
+  try {
+    for (auto stmt: program->statements) execute(stmt);
+  }
+  catch (BreakException&) {
+    interpreter_error("'break' used outside loop.");
+  }
+  catch (ContinueException&) {
+    interpreter_error("'continue' used outside loop.");
+  }
+  catch (ReturnException&) {
+    interpreter_error("'return' used outside loop.");
+  }
 }

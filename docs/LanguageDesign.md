@@ -98,7 +98,9 @@ else {
 
 }
 
-(a < b < c) will be allowed.
+conditions must be boolean.
+
+(a < b < c) will be not allowed.
 
 Loops:
 

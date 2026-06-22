@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "token.h"
+#include "../common/token.h"
 
 class ASTNode {
   public:
