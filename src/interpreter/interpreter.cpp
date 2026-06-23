@@ -400,6 +400,22 @@ void Interpreter::execute(StatementNode* node) {
     if (functions.find(n->name->name) != functions.end()) interpreter_error("Function '" + n->name->name + "' is already declared.");
     functions[n->name->name] = n;
   }
+  else if (auto n = dynamic_cast<IncrementNode*>(node)) {
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    Value var = lookupVariable(n->name->name)->second;
+    if (var.type == ValueType::INT) var.intval++;
+    else if (var.type == ValueType::FLOAT) var.floatval++;
+    else interpreter_error("Increment operator requries int or float.");
+    assignVariable(n->name, var);
+  }
+  else if (auto n = dynamic_cast<DecrementNode*>(node)) {
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    Value var = lookupVariable(n->name->name)->second;
+    if (var.type == ValueType::INT) var.intval--;
+    else if (var.type == ValueType::FLOAT) var.floatval--;
+    else interpreter_error("Decrement operator requries int or float.");
+    assignVariable(n->name, var);
+  }
 }
 
 void Interpreter::execute(ProgramNode* program) {
