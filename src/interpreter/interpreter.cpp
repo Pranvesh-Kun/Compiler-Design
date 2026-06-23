@@ -150,9 +150,23 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     Value val;
     val.type = ValueType::BOOL;
     Value operand = evaluate(n->operand);
-    if (operand.type != ValueType::BOOL) interpreter_error("'not' operator requires a boolean operand");
-    val.boolval = !(operand.boolval);
-    return val;
+    if (n->operation == TokenType::KW_NOT) {
+      if (operand.type != ValueType::BOOL) interpreter_error("'not' operator requires a boolean operand");
+      val.boolval = !(operand.boolval);
+      return val;
+    }
+    else {
+      if (operand.type != ValueType::INT && operand.type != ValueType::FLOAT) interpreter_error("Unary minus requires integer or float operand.");
+      if (operand.type == ValueType::INT) {
+        val.intval = -operand.intval;
+        val.type = ValueType::INT;
+      }
+      else {
+        val.floatval = -operand.floatval;
+        val.type = ValueType::FLOAT;        
+      }
+      return val;
+    }
   }
   else if (auto n = dynamic_cast<IdentifierNode*>(node)) {
     auto it = lookupVariable(n->name);
@@ -260,7 +274,21 @@ void Interpreter::execute(StatementNode* node) {
       if (n->type == TokenType::KW_ARRAY) {
         val.type = ValueType::ARRAY;
         if (evaluate(n->size).type != ValueType::INT) interpreter_error("Array size should be int");
+        if (evaluate(n->size).intval <= 0) interpreter_error("Array size must be strictly positive.");
         val.size = evaluate(n->size).intval;
+        val.arrayval = std::vector<Value>(val.size);
+        if (n->subtype == TokenType::KW_INT) {
+          for (int i = 0; i<val.size; i++) val.arrayval[i].intval = 0, val.arrayval[i].type = ValueType::INT;
+        }
+        if (n->subtype == TokenType::KW_FLOAT) {
+          for (int i = 0; i<val.size; i++) val.arrayval[i].floatval = 0.0, val.arrayval[i].type = ValueType::FLOAT;
+        }
+        if (n->subtype == TokenType::KW_STRING) {
+          for (int i = 0; i<val.size; i++) val.arrayval[i].stringval = "", val.arrayval[i].type = ValueType::STRING;
+        }
+        if (n->subtype == TokenType::KW_BOOL) {
+          for (int i = 0; i<val.size; i++) val.arrayval[i].boolval = false, val.arrayval[i].type = ValueType::BOOL;
+        }
       }     
       if (n->type == TokenType::KW_STRING) {
         val.stringval = "";
@@ -287,12 +315,14 @@ void Interpreter::execute(StatementNode* node) {
     Value val = evaluate(n->value);
     Value temp = lookupVariable(n->name->name)->second;
     if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
-    // if (val.type == ValueType::ARRAY) {
-    //   if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Initializer size is greater than array size.");
-    //   Value temp;
-    //   temp = val.arrayval[0];
-    //   for (int i = val.size; i<lookupVariable(n->name->name)->second.size; i++) val.arrayval[i] = temp;
-    // }
+    if (val.type == ValueType::ARRAY) {
+      if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Assigned array exceeds fixed array size.");
+      for (int i = 0; i<val.size; i++) {
+        temp.arrayval[i] = val.arrayval[i];
+      }
+      assignVariable(n->name, temp);
+      return;
+    }
     assignVariable(n->name, val);
   }
   else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {

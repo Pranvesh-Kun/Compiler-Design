@@ -155,9 +155,9 @@ ExpressionNode* Parser::parsePrimary() {
 }
 
 ExpressionNode* Parser::parseUnaryExpression() {
-  if (check(TokenType::KW_NOT)) {
+  if (check(TokenType::KW_NOT) || check(TokenType::MINUS)) {
     UnaryExpressionNode* node = new UnaryExpressionNode();
-    node->operation = TokenType::KW_NOT;
+    node->operation = current().type;
     advance();
     node->operand = parseUnaryExpression();
     return node;

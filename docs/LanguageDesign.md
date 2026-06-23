@@ -70,11 +70,12 @@ Mixed types is not allowed for arrays.
 Array reassignment is allowed:
 
 array(int) arr[5] = [1, 2, 3, 4, 5]
-arr = [1, 2, 3] 
+arr = [5, 6, 7]
 
-is allowed, ans the remaining values are initialized as 0.
+will change arr to [5, 6, 7, 4, 5].
+there should not be any size overload.
 
-but arr = [1, 2, 3, 4, 5, 6] is not allowed and will get error.
+arr = [1, 2, 3, 4, 5, 6] is not allowed and will get error.
 
 Strings have indexing, eg: s[0] will fetch first element.
 

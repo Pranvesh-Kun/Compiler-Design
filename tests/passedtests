@@ -467,4 +467,326 @@ Compiler Status:
 ✓ Phase 4 Complete - AST
 ✓ Phase 5 Complete - Interpreter
 
-Date Completed: June 22 2026 
+Date Completed: June 22 2026
+
+==================================================
+TEST 24 - VARIABLE SHADOWING
+
+Input:
+
+int x = 5
+
+if (true) {
+    int x = 10
+    output(x)
+}
+
+output(x)
+
+Expected Output:
+
+105
+
+Result: PASS
+
+==================================================
+TEST 25 - INNER VARIABLE DISAPPEARS
+
+Input:
+
+if (true) {
+    int y = 10
+}
+
+output(y)
+
+Expected:
+
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 26 - ASSIGNMENT USES NEAREST SCOPE
+
+Input:
+
+int x = 5
+
+if (true) {
+    int x = 10
+    x = 20
+    output(x)
+}
+
+output(x)
+
+Expected Output:
+
+205
+
+Result: PASS
+
+This verifies your fixed assignVariable().
+
+==================================================
+TEST 27 - OUTER VARIABLE ACCESS
+
+Input:
+
+int x = 5
+
+if (true) {
+    output(x)
+}
+
+Expected Output:
+
+5
+
+Result: PASS
+
+==================================================
+TEST 28 - NESTED SHADOWING
+
+Input:
+
+int x = 1
+
+if (true) {
+    int x = 2
+
+    if (true) {
+        int x = 3
+        output(x)
+    }
+
+    output(x)
+}
+
+output(x)
+
+Expected Output:
+
+321
+
+Result: PASS
+
+==================================================
+TEST 29 - FUNCTION PARAMETER SHADOWS GLOBAL
+
+Input:
+
+int x = 100
+
+int foo(int x) {
+    return x
+}
+
+output(foo(5))
+output(x)
+
+Expected Output:
+
+5100
+
+Result: PASS
+
+==================================================
+TEST 30 - FUNCTION LOCAL DISAPPEARS
+
+Input:
+
+int foo() {
+    int x = 5
+    return x
+}
+
+output(foo())
+output(x)
+
+Expected:
+
+5
+Interpreter Error
+
+Result: PASS
+
+==================================================
+TEST 31 - RECURSION SCOPE TEST
+
+Input:
+
+int fact(int n) {
+    output(n)
+
+    if (n == 0) {
+        return 1
+    }
+
+    return n * fact(n - 1)
+}
+
+fact(3)
+
+Expected Output:
+
+3210
+
+Result: PASS
+
+Verifies each recursive call gets its own scope.
+
+==================================================
+TEST 32 - WHILE LOOP SCOPE RESET
+
+Input:
+
+int x = 0
+
+while (x < 3) {
+    int y = x
+    output(y)
+    x = x + 1
+}
+
+Expected Output:
+
+012
+
+Result: PASS
+
+Would fail before your per-iteration scope fix.
+
+==================================================
+TEST 33 - FOR LOOP SCOPE RESET
+
+Input:
+
+array(int) nums = [1,2,3]
+
+for (x in nums) {
+    int y = x
+    output(y)
+}
+
+Expected Output:
+
+123
+
+Result: PASS
+
+==================================================
+TEST 34 - BREAK INSIDE IF
+
+Input:
+
+while (true) {
+    if (true) {
+        break
+    }
+}
+
+output("done")
+
+Expected Output:
+
+done
+
+Result: PASS
+
+Tests RAII cleanup + break.
+
+==================================================
+TEST 35 - CONTINUE INSIDE IF
+
+Input:
+
+int x = 0
+
+while (x < 3) {
+    x = x + 1
+
+    if (true) {
+        continue
+    }
+
+    output("BAD")
+}
+
+output("done")
+
+Expected Output:
+
+done
+
+Result: PASS
+
+Tests RAII cleanup + continue.
+
+==================================================
+TEST 36 - RETURN INSIDE IF
+
+Input:
+
+int foo() {
+    if (true) {
+        return 5
+    }
+
+    return 10
+}
+
+output(foo())
+
+Expected Output:
+
+5
+
+Result: PASS
+
+Tests RAII cleanup + return.
+
+==================================================
+TEST 37 - RETURN INSIDE NESTED IF
+
+Input:
+
+int foo() {
+    if (true) {
+        if (true) {
+            return 42
+        }
+    }
+
+    return 0
+}
+
+output(foo())
+
+Expected Output:
+
+42
+
+Result: PASS
+
+==================================================
+TEST 38 - FUNCTION LOCAL SHADOWING
+
+Input:
+
+int x = 1
+
+int foo() {
+    int x = 2
+    return x
+}
+
+output(foo())
+output(x)
+
+Expected Output:
+
+21
+
+Result: PASS

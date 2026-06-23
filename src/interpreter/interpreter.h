@@ -17,7 +17,7 @@ class Interpreter {
 
 struct Scope {
   std::vector<std::unordered_map<std::string, Value>>& scopes;
-  Scope(auto& s) : scopes(s) {
+  Scope(std::vector<std::unordered_map<std::string, Value>>& s) : scopes(s) {
     scopes.push_back(std::unordered_map<std::string, Value>());
   }; 
   ~Scope() {
