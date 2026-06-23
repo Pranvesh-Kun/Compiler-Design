@@ -215,9 +215,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
         if (f->parameters[i]->subtype == TokenType::KW_STRING && arg.arrayval[0].type != ValueType::STRING) interpreter_error("Expected parameter array of string elements.");
       }
     }
-    std::vector<std::unordered_map<std::string, Value>> copy;
-    swap(copy, scopes);
-    scopes.push_back(std::unordered_map<std::string, Value>());
+    Scope guard(scopes);
     for (int i = 0; i<(int)f->parameters.size(); i++) {
       scopes.back()[f->parameters[i]->name->name] = evaluate(n->arguments[i]);
     }
@@ -230,12 +228,8 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       if (r.value.type != ValueType::STRING && f->returntype == TokenType::KW_STRING) interpreter_error("Function must return string.");
       if (r.value.type != ValueType::BOOL && f->returntype == TokenType::KW_BOOL) interpreter_error("Function must return boolean.");
       if (r.value.type != ValueType::ARRAY && f->returntype == TokenType::KW_ARRAY) interpreter_error("Function must return array.");
-      scopes.pop_back();
-      swap(copy, scopes);
       return r.value;
     }
-    scopes.pop_back();
-    swap(copy, scopes);
     interpreter_error("Function without return is not allowed.");
     Value temp;
     temp.type = ValueType::VOID;
@@ -265,6 +259,7 @@ void Interpreter::execute(StatementNode* node) {
       }
       if (n->type == TokenType::KW_ARRAY) {
         val.type = ValueType::ARRAY;
+        if (evaluate(n->size).type != ValueType::INT) interpreter_error("Array size should be int");
         val.size = evaluate(n->size).intval;
       }     
       if (n->type == TokenType::KW_STRING) {
@@ -292,6 +287,12 @@ void Interpreter::execute(StatementNode* node) {
     Value val = evaluate(n->value);
     Value temp = lookupVariable(n->name->name)->second;
     if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
+    // if (val.type == ValueType::ARRAY) {
+    //   if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Initializer size is greater than array size.");
+    //   Value temp;
+    //   temp = val.arrayval[0];
+    //   for (int i = val.size; i<lookupVariable(n->name->name)->second.size; i++) val.arrayval[i] = temp;
+    // }
     assignVariable(n->name, val);
   }
   else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {
@@ -301,24 +302,21 @@ void Interpreter::execute(StatementNode* node) {
     Value val = evaluate(n->condition);
     if (val.type != ValueType::BOOL) interpreter_error("If condition must be boolean.");
     if (val.boolval) {
-      scopes.push_back(std::unordered_map<std::string, Value>());
+      Scope guard(scopes);
       for (auto it: n->codeblock) execute(it);
-      scopes.pop_back();
       return;
     }
     for (auto x: n->elseif) {
       Value v = evaluate(x->condition);
       if (v.type != ValueType::BOOL) interpreter_error("Else if condition must be boolean.");
       if (v.boolval) {
-        scopes.push_back(std::unordered_map<std::string, Value>());
+        Scope guard(scopes);
         for (auto it: x->codeblock) execute(it);
-        scopes.pop_back();
         return;
       }      
     }
-    scopes.push_back(std::unordered_map<std::string, Value>());
+    Scope guard(scopes);
     for (auto it: n->elseblock) execute(it);
-    scopes.pop_back();
   }
   else if (auto n = dynamic_cast<WhileLoopNode*>(node)) {
     Value val = evaluate(n->condition);
@@ -326,14 +324,12 @@ void Interpreter::execute(StatementNode* node) {
     try {
       while (val.boolval) {
         try {
-          scopes.push_back(std::unordered_map<std::string, Value>());
+          Scope guard(scopes);
           for (auto it: n->codeblock) execute(it);
           val = evaluate(n->condition);
-          scopes.pop_back();
         }
         catch (ContinueException&) {
           val = evaluate(n->condition);
-          scopes.pop_back();
           continue;
         }
       }
@@ -346,13 +342,11 @@ void Interpreter::execute(StatementNode* node) {
     try {
       for (auto it: val.arrayval) {
         try {
-          scopes.push_back(std::unordered_map<std::string, Value>());
+          Scope guard(scopes);
           scopes.back()[n->iterator->name] = it;
           for (auto stmt: n->codeblock) execute(stmt);
-          scopes.pop_back();
         }
         catch (ContinueException&) {
-          scopes.pop_back();
           continue;
         }
       }
