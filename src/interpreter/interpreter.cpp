@@ -7,6 +7,23 @@ void Interpreter::interpreter_error(std::string msg) {
   exit(1);
 }
 
+std::unordered_map<std::string, Value>::iterator Interpreter::lookupVariable(std::string name) {
+  for (int i = (int)scopes.size()-1; i>=0; i--) {
+    auto var = scopes[i].find(name);
+    if (var != scopes[i].end()) return var;
+  }
+  return scopes.back().end();
+}
+
+void Interpreter::assignVariable(IdentifierNode* node, Value val) {
+  for (int i = scopes.size()-1; i>=0; i--) {
+    if (scopes[i].find(node->name) != scopes[i].end()) {
+      scopes[i][node->name] = val;
+      return;
+    }
+  }
+}
+
 Value Interpreter::evaluate(ExpressionNode* node) {
   if (auto n = dynamic_cast<IntLiteralNode*>(node)) {
     Value val;
@@ -36,6 +53,10 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     Value val;
     val.type = ValueType::ARRAY;
     for (auto it: n->elements) val.arrayval.push_back(evaluate(it));
+    if (val.arrayval.empty()) {
+      val.size = 0;
+      return val;
+    }
     ValueType t = val.arrayval[0].type;
     for (auto it: val.arrayval) {
       if (it.type != t) interpreter_error("Array elements must be of the same type.");
@@ -134,13 +155,13 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     return val;
   }
   else if (auto n = dynamic_cast<IdentifierNode*>(node)) {
-    auto it = variables.find(n->name);
-    if (it == variables.end()) interpreter_error("Identifier \"" + n->name + "\" is undefined.");
+    auto it = lookupVariable(n->name);
+    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->name + "\" is undefined.");
     return it->second;
   }
   else if (auto n = dynamic_cast<IndexAccessNode*>(node)) {
-    auto it = variables.find(n->object->name);
-    if (it == variables.end()) interpreter_error("Identifier \"" + n->object->name + "\" is undefined.");
+    auto it = lookupVariable(n->object->name);
+    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->object->name + "\" is undefined.");
     Value ind = evaluate(n->index);
     if (ind.type != ValueType::INT) interpreter_error("Array index value must be Integer.");
     if (it->second.type != ValueType::ARRAY) interpreter_error("Identifier \"" + n->object->name + "\" must be Array.");
@@ -153,8 +174,8 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.");
       if (dynamic_cast<IdentifierNode*>(n->arguments[0]) == nullptr) interpreter_error("input() expects a variable.");
       auto id = dynamic_cast<IdentifierNode*>(n->arguments[0]);
-      if (variables.find(id->name) == variables.end()) interpreter_error("Identifier \"" + id->name + "\" is undefined.");
-      auto it = variables.find(id->name);
+      if (lookupVariable(id->name) == scopes.back().end()) interpreter_error("Identifier \"" + id->name + "\" is undefined.");
+      auto it = lookupVariable(id->name);
       if (it->second.type == ValueType::INT) std::cin >> it->second.intval;
       if (it->second.type == ValueType::FLOAT) std::cin >> it->second.floatval;
       if (it->second.type == ValueType::STRING) std::cin >> it->second.stringval;
@@ -194,25 +215,27 @@ Value Interpreter::evaluate(ExpressionNode* node) {
         if (f->parameters[i]->subtype == TokenType::KW_STRING && arg.arrayval[0].type != ValueType::STRING) interpreter_error("Expected parameter array of string elements.");
       }
     }
-    std::unordered_map<std::string, Value> exists;
-    for (auto it: f->parameters) {
-      if (variables.find(it->name->name) != variables.end()) exists[it->name->name] = variables[it->name->name];
-    }
+    std::vector<std::unordered_map<std::string, Value>> copy;
+    swap(copy, scopes);
+    scopes.push_back(std::unordered_map<std::string, Value>());
     for (int i = 0; i<(int)f->parameters.size(); i++) {
-      variables[f->parameters[i]->name->name] = evaluate(n->arguments[i]);
+      scopes.back()[f->parameters[i]->name->name] = evaluate(n->arguments[i]);
     }
     try {
       for (auto stmt: f->body) execute(stmt);
     }
     catch (ReturnException& r) {
-      for (auto it: f->parameters) {
-        if (exists.find(it->name->name) != exists.end()) {
-          variables[it->name->name] = exists[it->name->name];
-        }
-        else variables.erase(it->name->name);
-      }
+      if (r.value.type != ValueType::INT && f->returntype == TokenType::KW_INT) interpreter_error("Function must return integer.");
+      if (r.value.type != ValueType::FLOAT && f->returntype == TokenType::KW_FLOAT) interpreter_error("Function must return float.");
+      if (r.value.type != ValueType::STRING && f->returntype == TokenType::KW_STRING) interpreter_error("Function must return string.");
+      if (r.value.type != ValueType::BOOL && f->returntype == TokenType::KW_BOOL) interpreter_error("Function must return boolean.");
+      if (r.value.type != ValueType::ARRAY && f->returntype == TokenType::KW_ARRAY) interpreter_error("Function must return array.");
+      scopes.pop_back();
+      swap(copy, scopes);
       return r.value;
     }
+    scopes.pop_back();
+    swap(copy, scopes);
     interpreter_error("Function without return is not allowed.");
     Value temp;
     temp.type = ValueType::VOID;
@@ -224,8 +247,31 @@ Value Interpreter::evaluate(ExpressionNode* node) {
 
 void Interpreter::execute(StatementNode* node) {
   if (auto n = dynamic_cast<VariableDeclarationNode*>(node)) {
-    if (variables.find(n->name->name) != variables.end()) interpreter_error("Variable " + n->name->name + " already declared.");
-    Value val = evaluate(n->initializer);
+    if (scopes.back().find(n->name->name) != scopes.back().end()) interpreter_error("Variable " + n->name->name + " already declared.");
+    Value val;
+    if (n->initializer != nullptr) val = evaluate(n->initializer);
+    else {
+      if (n->type == TokenType::KW_INT) {
+        val.intval = 0;
+        val.type = ValueType::INT;
+      }
+      if (n->type == TokenType::KW_FLOAT) {
+        val.floatval = 0.0;
+        val.type = ValueType::FLOAT;
+      }
+      if (n->type == TokenType::KW_BOOL) {
+        val.boolval = false;
+        val.type = ValueType::BOOL;
+      }
+      if (n->type == TokenType::KW_ARRAY) {
+        val.type = ValueType::ARRAY;
+        val.size = evaluate(n->size).intval;
+      }     
+      if (n->type == TokenType::KW_STRING) {
+        val.stringval = "";
+        val.type = ValueType::STRING;
+      }
+    }
     if (val.type == ValueType::INT && n->type != TokenType::KW_INT) interpreter_error("Initializer must be of type integer.");
     if (val.type == ValueType::FLOAT && n->type != TokenType::KW_FLOAT) interpreter_error("Initializer must be of type float.");
     if (val.type == ValueType::BOOL && n->type != TokenType::KW_BOOL) interpreter_error("Initializer must be of type boolean.");
@@ -239,14 +285,14 @@ void Interpreter::execute(StatementNode* node) {
         if (x.type == ValueType::STRING && n->subtype != TokenType::KW_STRING) interpreter_error("Array elements must be of type string.");
       }
     }
-    variables[n->name->name] = val;
+    scopes.back()[n->name->name] = val;
   }
   else if (auto n = dynamic_cast<AssignmentNode*>(node)) {
-    if (variables.find(n->name->name) == variables.end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
     Value val = evaluate(n->value);
-    Value temp = variables[n->name->name];
+    Value temp = lookupVariable(n->name->name)->second;
     if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
-    variables[n->name->name] = val;
+    assignVariable(n->name, val);
   }
   else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {
     evaluate(n->expression);
@@ -255,18 +301,24 @@ void Interpreter::execute(StatementNode* node) {
     Value val = evaluate(n->condition);
     if (val.type != ValueType::BOOL) interpreter_error("If condition must be boolean.");
     if (val.boolval) {
+      scopes.push_back(std::unordered_map<std::string, Value>());
       for (auto it: n->codeblock) execute(it);
+      scopes.pop_back();
       return;
     }
     for (auto x: n->elseif) {
       Value v = evaluate(x->condition);
       if (v.type != ValueType::BOOL) interpreter_error("Else if condition must be boolean.");
       if (v.boolval) {
+        scopes.push_back(std::unordered_map<std::string, Value>());
         for (auto it: x->codeblock) execute(it);
+        scopes.pop_back();
         return;
       }      
     }
+    scopes.push_back(std::unordered_map<std::string, Value>());
     for (auto it: n->elseblock) execute(it);
+    scopes.pop_back();
   }
   else if (auto n = dynamic_cast<WhileLoopNode*>(node)) {
     Value val = evaluate(n->condition);
@@ -274,11 +326,14 @@ void Interpreter::execute(StatementNode* node) {
     try {
       while (val.boolval) {
         try {
+          scopes.push_back(std::unordered_map<std::string, Value>());
           for (auto it: n->codeblock) execute(it);
           val = evaluate(n->condition);
+          scopes.pop_back();
         }
         catch (ContinueException&) {
           val = evaluate(n->condition);
+          scopes.pop_back();
           continue;
         }
       }
@@ -288,24 +343,21 @@ void Interpreter::execute(StatementNode* node) {
   else if (auto n = dynamic_cast<ForLoopNode*>(node)) {
     Value val = evaluate(n->iterable);
     if (val.type != ValueType::ARRAY) interpreter_error("For loop iterable must be array.");
-    bool existed = variables.find(n->iterator->name) != variables.end();
-    Value old;
-    if (existed) old = variables[n->iterator->name]; 
     try {
       for (auto it: val.arrayval) {
         try {
-          variables[n->iterator->name] = it;
+          scopes.push_back(std::unordered_map<std::string, Value>());
+          scopes.back()[n->iterator->name] = it;
           for (auto stmt: n->codeblock) execute(stmt);
+          scopes.pop_back();
         }
         catch (ContinueException&) {
+          scopes.pop_back();
           continue;
         }
       }
     }
     catch (BreakException&) {}
-
-    if (existed) variables[n->iterator->name] = old;
-    else variables.erase(n->iterator->name);
   }
   else if (auto n = dynamic_cast<ReturnNode*>(node)) {
     ReturnException r;
@@ -328,6 +380,7 @@ void Interpreter::execute(StatementNode* node) {
 
 void Interpreter::execute(ProgramNode* program) {
   try {
+    scopes.push_back(std::unordered_map<std::string, Value>());
     for (auto stmt: program->statements) execute(stmt);
   }
   catch (BreakException&) {
@@ -337,6 +390,6 @@ void Interpreter::execute(ProgramNode* program) {
     interpreter_error("'continue' used outside loop.");
   }
   catch (ReturnException&) {
-    interpreter_error("'return' used outside loop.");
+    interpreter_error("'return' used outside function.");
   }
 }

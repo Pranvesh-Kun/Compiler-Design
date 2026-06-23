@@ -9,7 +9,9 @@ class Interpreter {
     void execute(StatementNode*);
     void execute(ProgramNode*);
     void interpreter_error(std::string);
-    std::unordered_map<std::string, Value> variables;
+    std::vector<std::unordered_map<std::string, Value>> scopes;
+    std::unordered_map<std::string, Value>::iterator lookupVariable(std::string);
+    void assignVariable(IdentifierNode*, Value);
     std::unordered_map<std::string, FunctionDeclarationNode*> functions;
 };
 
