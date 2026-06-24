@@ -28,6 +28,7 @@ The Cypher interpreter executes programs directly from the AST and supports user
 
 ## Table of Contents
 
+- [Example Program](#example-program)
 - [Data Types](#data-types)
 - [Variables](#variables)
 - [Arrays](#arrays)
@@ -42,6 +43,7 @@ The Cypher interpreter executes programs directly from the AST and supports user
 - [Implementation](#implementation)
 - [Debugging Tools](#debugging-tools)
 - [Building & Running](#building--running)
+- [Project Statistics](#project-statistics)
 - [Status](#status)
 
 ---
@@ -377,7 +379,7 @@ Functions support:
 - Local scopes
 
 ### Void Functions
-Void functions are supported. A void function must return 0.
+Void functions are supported. By language design, void functions are required to return 0.
 ```
 void greet() {
     return 0
@@ -537,7 +539,7 @@ Place source code in `tests/source.txt`, then:
 ## Project Statistics
 
 - Language: C++
-- Approximate implementation size: ~1800 lines of C++ code.
+- Approximate implementation size: ~2000 lines of C++ code.
 - Parsing Technique: Recursive Descent Parsing
 - Execution Model: Tree-Walk Interpreter
 - Data Structures Used:
@@ -561,7 +563,9 @@ Implemented:
 - Parser
 - AST
 - Interpreter
-- Functions & Recursion
+- Control Flow
+- Functions
+- Recursion
 - Arrays
 - Scopes
 - Runtime Semantic Validation
