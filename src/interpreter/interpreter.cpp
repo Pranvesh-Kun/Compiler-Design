@@ -411,7 +411,7 @@ void Interpreter::execute(StatementNode* node) {
     std::set<std::string> s;
     for (auto it: n->parameters) {
       if (s.find(it->name->name) != s.end()) interpreter_error("Duplicate parameters are not allowed.");
-      s.insert(n->name->name);
+      s.insert(it->name->name);
     }
   }
   else if (auto n = dynamic_cast<IncrementNode*>(node)) {

@@ -1,7 +1,7 @@
-array(int) doo() {
+array(int) doo(int x1, int x2) {
   array(int) x[2] = [5.5, 4.5]
   return x
 }
 
-array(int) x = doo()
+array(int) x = doo(1 2 3)
 output(x[0])
