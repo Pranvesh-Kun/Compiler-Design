@@ -433,6 +433,8 @@ void Interpreter::execute(StatementNode* node) {
     for (auto it: n->body) {
       if (auto x = dynamic_cast<ReturnNode*>(it)) {
         if (n->returntype == TokenType::KW_INT && evaluate(x->value).type != ValueType::INT) interpreter_error("Return type must be integer.", x);
+        if (n->returntype == TokenType::KW_VOID && evaluate(x->value).type != ValueType::INT) interpreter_error("Return type must be void (0).", x);
+        if (n->returntype == TokenType::KW_VOID && evaluate(x->value).intval != 0) interpreter_error("Return type must be void (0).", x);
         if (n->returntype == TokenType::KW_FLOAT && evaluate(x->value).type != ValueType::FLOAT) interpreter_error("Return type must be float.", x);
         if (n->returntype == TokenType::KW_BOOL && evaluate(x->value).type != ValueType::BOOL) interpreter_error("Return type must be bool.", x);
         if (n->returntype == TokenType::KW_STRING && evaluate(x->value).type != ValueType::STRING) interpreter_error("Return type must be string.", x);
