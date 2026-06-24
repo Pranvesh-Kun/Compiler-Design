@@ -65,7 +65,7 @@ is allowed.
 
 Type inference is also allowed in arrays.
 
-Mixed types is not allowed for arrays.
+Mixed types is not allowed for array, nested arrays are not allowed for version 1.
 
 Array reassignment is allowed:
 

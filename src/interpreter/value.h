@@ -14,6 +14,7 @@ enum class ValueType {
 class Value {
   public:
     ValueType type;
+    ValueType subtype;
     int size;
     int intval;
     float floatval;

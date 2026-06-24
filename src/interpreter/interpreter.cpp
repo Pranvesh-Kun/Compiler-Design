@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include <iostream>
 #include <string>
+#include <set>
 
 void Interpreter::interpreter_error(std::string msg) {
   std::cerr << "Interpreter Error: " << msg << "\n";
@@ -61,6 +62,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     for (auto it: val.arrayval) {
       if (it.type != t) interpreter_error("Array elements must be of the same type.");
     }
+    val.subtype = t;
     val.size = n->elements.size();
     return val;
   }
@@ -242,6 +244,12 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       if (r.value.type != ValueType::STRING && f->returntype == TokenType::KW_STRING) interpreter_error("Function must return string.");
       if (r.value.type != ValueType::BOOL && f->returntype == TokenType::KW_BOOL) interpreter_error("Function must return boolean.");
       if (r.value.type != ValueType::ARRAY && f->returntype == TokenType::KW_ARRAY) interpreter_error("Function must return array.");
+      if (r.value.type == ValueType::ARRAY) {
+        if (r.value.subtype != ValueType::INT && f->returnsubtype == TokenType::KW_INT) interpreter_error("Function must return integer array.");
+        if (r.value.subtype != ValueType::FLOAT && f->returnsubtype == TokenType::KW_FLOAT) interpreter_error("Function must return float array.");
+        if (r.value.subtype != ValueType::STRING && f->returnsubtype == TokenType::KW_STRING) interpreter_error("Function must return string array.");
+        if (r.value.subtype != ValueType::BOOL && f->returnsubtype == TokenType::KW_BOOL) interpreter_error("Function must return boolean array.");
+      }
       return r.value;
     }
     interpreter_error("Function without return is not allowed.");
@@ -317,6 +325,7 @@ void Interpreter::execute(StatementNode* node) {
     if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
     if (val.type == ValueType::ARRAY) {
       if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Assigned array exceeds fixed array size.");
+      if (val.subtype != temp.subtype) interpreter_error("Assigned array subtype is different.");
       for (int i = 0; i<val.size; i++) {
         temp.arrayval[i] = val.arrayval[i];
       }
@@ -399,6 +408,11 @@ void Interpreter::execute(StatementNode* node) {
   else if (auto n = dynamic_cast<FunctionDeclarationNode*>(node)) {
     if (functions.find(n->name->name) != functions.end()) interpreter_error("Function '" + n->name->name + "' is already declared.");
     functions[n->name->name] = n;
+    std::set<std::string> s;
+    for (auto it: n->parameters) {
+      if (s.find(it->name->name) != s.end()) interpreter_error("Duplicate parameters are not allowed.");
+      s.insert(n->name->name);
+    }
   }
   else if (auto n = dynamic_cast<IncrementNode*>(node)) {
     if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");

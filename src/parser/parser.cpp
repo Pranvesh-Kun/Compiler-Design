@@ -518,6 +518,19 @@ ParameterNode* Parser::parseParameter() {
 FunctionDeclarationNode* Parser::parseFunctionDeclaration() {
   FunctionDeclarationNode* node = new FunctionDeclarationNode();
   node->returntype = current().type;
+  if (current().type == TokenType::KW_ARRAY) {
+    advance();
+    if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
+    advance();
+    node->returnsubtype = current().type;
+    if (!check(TokenType::KW_INT) && !check(TokenType::KW_FLOAT) && !check(TokenType::KW_STRING) && !check(TokenType::KW_BOOL)) {
+      std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
+      std::cout << "Expected a valid array subtype.";
+      abort();
+    }
+    advance();
+    if (!check(TokenType::R_PAREN)) parser_error(TokenType::R_PAREN);
+  }
   advance();
   node->name = parseIdentifier();
   if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
@@ -547,11 +560,29 @@ StatementNode* Parser::parseStatement() {
   if (cur.type == TokenType::KW_INT || cur.type == TokenType::KW_FLOAT || cur.type == TokenType::KW_STRING
   || cur.type == TokenType::KW_BOOL || cur.type == TokenType::KW_ARRAY || cur.type == TokenType::KW_LET || cur.type == TokenType::KW_VOID) {
     // starts with type
-    if (cur.type == TokenType::KW_LET || cur.type == TokenType::KW_ARRAY) {
+    if (cur.type == TokenType::KW_LET) {
       return parseVariableDeclaration();
     }
     if (cur.type == TokenType::KW_VOID) {
       return parseFunctionDeclaration();
+    }
+    if (check(TokenType::KW_ARRAY)) {
+      if (peek().type != TokenType::L_PAREN) parser_error(TokenType::L_PAREN);
+      advance();
+      if (peek().type == TokenType::END_OF_FILE) parser_error(TokenType::IDENTIFIER);
+      advance();
+      if (peek().type != TokenType::R_PAREN) parser_error(TokenType::R_PAREN);
+      advance();
+      if (peek().type != TokenType::IDENTIFIER) parser_error(TokenType::IDENTIFIER);
+      advance();
+      if (peek().type == TokenType::L_PAREN) {
+        ind -= 4;
+        return parseFunctionDeclaration();
+      }
+      else {
+        ind -= 4;
+        return parseVariableDeclaration();
+      }
     }
     advance();
     cur = current();

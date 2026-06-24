@@ -148,6 +148,7 @@ class ForLoopNode: public StatementNode {
 class FunctionDeclarationNode: public StatementNode {
   public:
     TokenType returntype;
+    TokenType returnsubtype;
     IdentifierNode* name;
     std::vector<ParameterNode*> parameters;
     std::vector<StatementNode*> body;
