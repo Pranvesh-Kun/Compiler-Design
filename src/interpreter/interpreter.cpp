@@ -3,8 +3,9 @@
 #include <string>
 #include <set>
 
-void Interpreter::interpreter_error(std::string msg) {
-  std::cerr << "Interpreter Error: " << msg << "\n";
+void Interpreter::interpreter_error(std::string msg, ASTNode* n) {
+  std::cerr << "Interpreter Error at line " << n->row << ", column " << n->col << ".\n";
+  std::cerr << "Error: " << msg << "\n";
   exit(1);
 }
 
@@ -60,7 +61,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     }
     ValueType t = val.arrayval[0].type;
     for (auto it: val.arrayval) {
-      if (it.type != t) interpreter_error("Array elements must be of the same type.");
+      if (it.type != t) interpreter_error("Array elements must be of the same type.", n);
     }
     val.subtype = t;
     val.size = n->elements.size();
@@ -69,11 +70,11 @@ Value Interpreter::evaluate(ExpressionNode* node) {
   else if (auto n = dynamic_cast<BinaryExpressionNode*>(node)) {
     Value left = evaluate(n->left);
     Value right = evaluate(n->right);
-    if (left.type != right.type) interpreter_error("Operands must have the same type.");
+    if (left.type != right.type) interpreter_error("Operands must have the same type.", n);
     Value val;
     if (n->operation == TokenType::PLUS || n->operation == TokenType::MINUS || 
       n->operation == TokenType::ASTERISK || n->operation == TokenType::SLASH || n->operation == TokenType::MOD) {
-      if (left.type == ValueType::BOOL || left.type == ValueType::STRING || left.type == ValueType::ARRAY) interpreter_error("Arithmetic operators require int or float operands.");
+      if (left.type == ValueType::BOOL || left.type == ValueType::STRING || left.type == ValueType::ARRAY) interpreter_error("Arithmetic operators require int or float operands.", n);
       val.type = left.type;
       if (n->operation == TokenType::PLUS) {
         if (val.type == ValueType::INT) val.intval = left.intval + right.intval;
@@ -88,20 +89,20 @@ Value Interpreter::evaluate(ExpressionNode* node) {
         else val.floatval = left.floatval * right.floatval;
       } 
       if (n->operation == TokenType::SLASH) {
-        if (val.type == ValueType::INT && right.intval == 0) interpreter_error("Division by zero.");
-        if (val.type == ValueType::FLOAT && right.floatval == 0.0f) interpreter_error("Division by zero.");
+        if (val.type == ValueType::INT && right.intval == 0) interpreter_error("Division by zero.", n);
+        if (val.type == ValueType::FLOAT && right.floatval == 0.0f) interpreter_error("Division by zero.", n);
         if (val.type == ValueType::INT) val.intval = left.intval / right.intval;
         else val.floatval = left.floatval / right.floatval;
       } 
       if (n->operation == TokenType::MOD) {
-        if (val.type == ValueType::INT && right.intval == 0) interpreter_error("Modulo by zero.");
+        if (val.type == ValueType::INT && right.intval == 0) interpreter_error("Modulo by zero.", n);
         if (val.type == ValueType::INT) val.intval = left.intval % right.intval;
-        else interpreter_error("Modulo operator only supports integers");
+        else interpreter_error("Modulo operator only supports integers", n);
       } 
     }
     else if (n->operation == TokenType::GRT_EQUALS || n->operation == TokenType::GRT_THAN ||
       n->operation == TokenType::LESS_EQUALS || n->operation == TokenType::LESS_THAN) {
-      if (left.type == ValueType::STRING || left.type == ValueType::ARRAY || left.type == ValueType::BOOL) interpreter_error("Comparison operators only support int and float values");
+      if (left.type == ValueType::STRING || left.type == ValueType::ARRAY || left.type == ValueType::BOOL) interpreter_error("Comparison operators only support int and float values", n);
       val.type = ValueType::BOOL;
       if (n->operation == TokenType::GRT_EQUALS) {
         if (left.type == ValueType::INT) val.boolval = (left.intval >= right.intval);
@@ -121,7 +122,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       }
     }
     else if (n->operation == TokenType::EQUALS) {
-      if (left.type == ValueType::ARRAY) interpreter_error("Equals operators does not support array values");
+      if (left.type == ValueType::ARRAY) interpreter_error("Equals operators does not support array values", n);
       val.type = ValueType::BOOL;
       if (left.type == ValueType::INT) val.boolval = (left.intval == right.intval);
       else if (left.type == ValueType::BOOL) val.boolval = (left.boolval == right.boolval);
@@ -129,7 +130,7 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       else val.boolval = (left.floatval == right.floatval);
     }
     else if (n->operation == TokenType::NOT_EQUALS) {
-      if (left.type == ValueType::ARRAY) interpreter_error("Not Equals operators does not support array values");
+      if (left.type == ValueType::ARRAY) interpreter_error("Not Equals operators does not support array values", n);
       val.type = ValueType::BOOL;
       if (left.type == ValueType::INT) val.boolval = (left.intval != right.intval);
       else if (left.type == ValueType::BOOL) val.boolval = (left.boolval != right.boolval);
@@ -137,12 +138,12 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       else val.boolval = (left.floatval != right.floatval);
     }
     else if (n->operation == TokenType::KW_AND) {
-      if (left.type != ValueType::BOOL) interpreter_error("Logical operators require boolean operands");
+      if (left.type != ValueType::BOOL) interpreter_error("Logical operators require boolean operands", n);
       val.type = ValueType::BOOL;
       val.boolval = (left.boolval && right.boolval);
     }
     else if (n->operation == TokenType::KW_OR) {
-      if (left.type != ValueType::BOOL) interpreter_error("Logical operators require boolean operands");
+      if (left.type != ValueType::BOOL) interpreter_error("Logical operators require boolean operands", n);
       val.type = ValueType::BOOL;
       val.boolval = (left.boolval || right.boolval);
     }
@@ -153,12 +154,12 @@ Value Interpreter::evaluate(ExpressionNode* node) {
     val.type = ValueType::BOOL;
     Value operand = evaluate(n->operand);
     if (n->operation == TokenType::KW_NOT) {
-      if (operand.type != ValueType::BOOL) interpreter_error("'not' operator requires a boolean operand");
+      if (operand.type != ValueType::BOOL) interpreter_error("'not' operator requires a boolean operand", n);
       val.boolval = !(operand.boolval);
       return val;
     }
     else {
-      if (operand.type != ValueType::INT && operand.type != ValueType::FLOAT) interpreter_error("Unary minus requires integer or float operand.");
+      if (operand.type != ValueType::INT && operand.type != ValueType::FLOAT) interpreter_error("Unary minus requires integer or float operand.", n);
       if (operand.type == ValueType::INT) {
         val.intval = -operand.intval;
         val.type = ValueType::INT;
@@ -172,25 +173,25 @@ Value Interpreter::evaluate(ExpressionNode* node) {
   }
   else if (auto n = dynamic_cast<IdentifierNode*>(node)) {
     auto it = lookupVariable(n->name);
-    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->name + "\" is undefined.");
+    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->name + "\" is undefined.", n);
     return it->second;
   }
   else if (auto n = dynamic_cast<IndexAccessNode*>(node)) {
     auto it = lookupVariable(n->object->name);
-    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->object->name + "\" is undefined.");
+    if (it == scopes.back().end()) interpreter_error("Identifier \"" + n->object->name + "\" is undefined.", n);
     Value ind = evaluate(n->index);
-    if (ind.type != ValueType::INT) interpreter_error("Array index value must be Integer.");
-    if (it->second.type != ValueType::ARRAY) interpreter_error("Identifier \"" + n->object->name + "\" must be Array.");
-    if (ind.intval >= it->second.size || ind.intval < 0) interpreter_error("Array index out of bounds.");
+    if (ind.type != ValueType::INT) interpreter_error("Array index value must be Integer.", n);
+    if (it->second.type != ValueType::ARRAY) interpreter_error("Identifier \"" + n->object->name + "\" must be Array.", n);
+    if (ind.intval >= it->second.size || ind.intval < 0) interpreter_error("Array index out of bounds.", n);
     return it->second.arrayval[ind.intval];
   }
   else if (auto n = dynamic_cast<FunctionCallNode*>(node)) {
     if (n->name->name == "input") {
-      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.");
-      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.");
-      if (dynamic_cast<IdentifierNode*>(n->arguments[0]) == nullptr) interpreter_error("input() expects a variable.");
+      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.", n);
+      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.", n);
+      if (dynamic_cast<IdentifierNode*>(n->arguments[0]) == nullptr) interpreter_error("input() expects a variable.", n);
       auto id = dynamic_cast<IdentifierNode*>(n->arguments[0]);
-      if (lookupVariable(id->name) == scopes.back().end()) interpreter_error("Identifier \"" + id->name + "\" is undefined.");
+      if (lookupVariable(id->name) == scopes.back().end()) interpreter_error("Identifier \"" + id->name + "\" is undefined.", n);
       auto it = lookupVariable(id->name);
       if (it->second.type == ValueType::INT) std::cin >> it->second.intval;
       if (it->second.type == ValueType::FLOAT) std::cin >> it->second.floatval;
@@ -201,8 +202,8 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       return temp;
     }
     else if (n->name->name == "output") {
-      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.");
-      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.");
+      if (n->arguments.size() > 1) interpreter_error("Too many arguments, expected 1.", n);
+      if (n->arguments.size() == 0) interpreter_error("Too less arguments, expected 1.", n);
       Value val = evaluate(n->arguments[0]);
       if (val.type == ValueType::INT) std::cout << val.intval;
       if (val.type == ValueType::BOOL) std::cout << std::boolalpha << val.boolval;
@@ -213,22 +214,22 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       return temp;
     }
     auto func = functions.find(n->name->name);
-    if (func == functions.end()) interpreter_error("Function '" + n->name->name + "' is undeclared.");
+    if (func == functions.end()) interpreter_error("Function '" + n->name->name + "' is undeclared.", n);
     FunctionDeclarationNode* f = func->second;
-    if ((int)f->parameters.size() != n->arguments.size()) interpreter_error("Expected " + std::to_string((int)f->parameters.size()) + " arguments, found " + std::to_string((int)n->arguments.size()) + ".");
+    if ((int)f->parameters.size() != n->arguments.size()) interpreter_error("Expected " + std::to_string((int)f->parameters.size()) + " arguments, found " + std::to_string((int)n->arguments.size()) + ".", n);
     for (int i = 0; i<(int)f->parameters.size(); i++) {
       Value arg = evaluate(n->arguments[i]);
-      if (f->parameters[i]->type == TokenType::KW_INT && arg.type != ValueType::INT) interpreter_error("Expected parameter type integer.");
-      if (f->parameters[i]->type == TokenType::KW_FLOAT && arg.type != ValueType::FLOAT) interpreter_error("Expected parameter type float.");
-      if (f->parameters[i]->type == TokenType::KW_BOOL && arg.type != ValueType::BOOL) interpreter_error("Expected parameter type boolean.");
-      if (f->parameters[i]->type == TokenType::KW_ARRAY && arg.type != ValueType::ARRAY) interpreter_error("Expected parameter type array.");
-      if (f->parameters[i]->type == TokenType::KW_STRING && arg.type != ValueType::STRING) interpreter_error("Expected parameter type string.");
+      if (f->parameters[i]->type == TokenType::KW_INT && arg.type != ValueType::INT) interpreter_error("Expected parameter type integer.", n);
+      if (f->parameters[i]->type == TokenType::KW_FLOAT && arg.type != ValueType::FLOAT) interpreter_error("Expected parameter type float.", n);
+      if (f->parameters[i]->type == TokenType::KW_BOOL && arg.type != ValueType::BOOL) interpreter_error("Expected parameter type boolean.", n);
+      if (f->parameters[i]->type == TokenType::KW_ARRAY && arg.type != ValueType::ARRAY) interpreter_error("Expected parameter type array.", n);
+      if (f->parameters[i]->type == TokenType::KW_STRING && arg.type != ValueType::STRING) interpreter_error("Expected parameter type string.", n);
       if (f->parameters[i]->type == TokenType::KW_ARRAY && arg.size > 0) {
-        if (f->parameters[i]->subtype == TokenType::KW_INT && arg.arrayval[0].type != ValueType::INT) interpreter_error("Expected parameter array of integer elements.");
-        if (f->parameters[i]->subtype == TokenType::KW_FLOAT && arg.arrayval[0].type != ValueType::FLOAT) interpreter_error("Expected parameter array of float elements.");
-        if (f->parameters[i]->subtype == TokenType::KW_BOOL && arg.arrayval[0].type != ValueType::BOOL) interpreter_error("Expected parameter array of boolean elements.");
-        if (f->parameters[i]->subtype == TokenType::KW_ARRAY && arg.arrayval[0].type != ValueType::ARRAY) interpreter_error("Expected parameter array of array elements.");
-        if (f->parameters[i]->subtype == TokenType::KW_STRING && arg.arrayval[0].type != ValueType::STRING) interpreter_error("Expected parameter array of string elements.");
+        if (f->parameters[i]->subtype == TokenType::KW_INT && arg.arrayval[0].type != ValueType::INT) interpreter_error("Expected parameter array of integer elements.", n);
+        if (f->parameters[i]->subtype == TokenType::KW_FLOAT && arg.arrayval[0].type != ValueType::FLOAT) interpreter_error("Expected parameter array of float elements.", n);
+        if (f->parameters[i]->subtype == TokenType::KW_BOOL && arg.arrayval[0].type != ValueType::BOOL) interpreter_error("Expected parameter array of boolean elements.", n);
+        if (f->parameters[i]->subtype == TokenType::KW_ARRAY && arg.arrayval[0].type != ValueType::ARRAY) interpreter_error("Expected parameter array of array elements.", n);
+        if (f->parameters[i]->subtype == TokenType::KW_STRING && arg.arrayval[0].type != ValueType::STRING) interpreter_error("Expected parameter array of string elements.", n);
       }
     }
     Scope guard(scopes);
@@ -239,31 +240,30 @@ Value Interpreter::evaluate(ExpressionNode* node) {
       for (auto stmt: f->body) execute(stmt);
     }
     catch (ReturnException& r) {
-      if (r.value.type != ValueType::INT && f->returntype == TokenType::KW_INT) interpreter_error("Function must return integer.");
-      if (r.value.type != ValueType::FLOAT && f->returntype == TokenType::KW_FLOAT) interpreter_error("Function must return float.");
-      if (r.value.type != ValueType::STRING && f->returntype == TokenType::KW_STRING) interpreter_error("Function must return string.");
-      if (r.value.type != ValueType::BOOL && f->returntype == TokenType::KW_BOOL) interpreter_error("Function must return boolean.");
-      if (r.value.type != ValueType::ARRAY && f->returntype == TokenType::KW_ARRAY) interpreter_error("Function must return array.");
+      if (r.value.type != ValueType::INT && f->returntype == TokenType::KW_INT) interpreter_error("Function must return integer.", n);
+      if (r.value.type != ValueType::FLOAT && f->returntype == TokenType::KW_FLOAT) interpreter_error("Function must return float.", n);
+      if (r.value.type != ValueType::STRING && f->returntype == TokenType::KW_STRING) interpreter_error("Function must return string.", n);
+      if (r.value.type != ValueType::BOOL && f->returntype == TokenType::KW_BOOL) interpreter_error("Function must return boolean.", n);
+      if (r.value.type != ValueType::ARRAY && f->returntype == TokenType::KW_ARRAY) interpreter_error("Function must return array.", n);
       if (r.value.type == ValueType::ARRAY) {
-        if (r.value.subtype != ValueType::INT && f->returnsubtype == TokenType::KW_INT) interpreter_error("Function must return integer array.");
-        if (r.value.subtype != ValueType::FLOAT && f->returnsubtype == TokenType::KW_FLOAT) interpreter_error("Function must return float array.");
-        if (r.value.subtype != ValueType::STRING && f->returnsubtype == TokenType::KW_STRING) interpreter_error("Function must return string array.");
-        if (r.value.subtype != ValueType::BOOL && f->returnsubtype == TokenType::KW_BOOL) interpreter_error("Function must return boolean array.");
+        if (r.value.subtype != ValueType::INT && f->returnsubtype == TokenType::KW_INT) interpreter_error("Function must return integer array.", n);
+        if (r.value.subtype != ValueType::FLOAT && f->returnsubtype == TokenType::KW_FLOAT) interpreter_error("Function must return float array.", n);
+        if (r.value.subtype != ValueType::STRING && f->returnsubtype == TokenType::KW_STRING) interpreter_error("Function must return string array.", n);
+        if (r.value.subtype != ValueType::BOOL && f->returnsubtype == TokenType::KW_BOOL) interpreter_error("Function must return boolean array.", n);
       }
       return r.value;
     }
-    interpreter_error("Function without return is not allowed.");
+    interpreter_error("Function without return is not allowed.", n);
     Value temp;
     temp.type = ValueType::VOID;
     return temp;
   }
-  interpreter_error("Unknown expression node");
   return Value();
 }
 
 void Interpreter::execute(StatementNode* node) {
   if (auto n = dynamic_cast<VariableDeclarationNode*>(node)) {
-    if (scopes.back().find(n->name->name) != scopes.back().end()) interpreter_error("Variable " + n->name->name + " already declared.");
+    if (scopes.back().find(n->name->name) != scopes.back().end()) interpreter_error("Variable " + n->name->name + " already declared.", n);
     Value val;
     if (n->initializer != nullptr) val = evaluate(n->initializer);
     else {
@@ -281,8 +281,8 @@ void Interpreter::execute(StatementNode* node) {
       }
       if (n->type == TokenType::KW_ARRAY) {
         val.type = ValueType::ARRAY;
-        if (evaluate(n->size).type != ValueType::INT) interpreter_error("Array size should be int");
-        if (evaluate(n->size).intval <= 0) interpreter_error("Array size must be strictly positive.");
+        if (evaluate(n->size).type != ValueType::INT) interpreter_error("Array size should be int", n);
+        if (evaluate(n->size).intval <= 0) interpreter_error("Array size must be strictly positive.", n);
         val.size = evaluate(n->size).intval;
         val.arrayval = std::vector<Value>(val.size);
         if (n->subtype == TokenType::KW_INT) {
@@ -303,29 +303,29 @@ void Interpreter::execute(StatementNode* node) {
         val.type = ValueType::STRING;
       }
     }
-    if (val.type == ValueType::INT && n->type != TokenType::KW_INT) interpreter_error("Initializer must be of type integer.");
-    if (val.type == ValueType::FLOAT && n->type != TokenType::KW_FLOAT) interpreter_error("Initializer must be of type float.");
-    if (val.type == ValueType::BOOL && n->type != TokenType::KW_BOOL) interpreter_error("Initializer must be of type boolean.");
-    if (val.type == ValueType::STRING && n->type != TokenType::KW_STRING) interpreter_error("Initializer must be of type string.");
+    if (val.type == ValueType::INT && n->type != TokenType::KW_INT) interpreter_error("Initializer must be of type integer.", n);
+    if (val.type == ValueType::FLOAT && n->type != TokenType::KW_FLOAT) interpreter_error("Initializer must be of type float.", n);
+    if (val.type == ValueType::BOOL && n->type != TokenType::KW_BOOL) interpreter_error("Initializer must be of type boolean.", n);
+    if (val.type == ValueType::STRING && n->type != TokenType::KW_STRING) interpreter_error("Initializer must be of type string.", n);
     if (val.type == ValueType::ARRAY) {
-      if (n->type != TokenType::KW_ARRAY) interpreter_error("Initializer must be an array.");
+      if (n->type != TokenType::KW_ARRAY) interpreter_error("Initializer must be an array.", n);
       for (auto x: val.arrayval) {
-        if (x.type == ValueType::INT && n->subtype != TokenType::KW_INT) interpreter_error("Array elements must be of type integer.");
-        if (x.type == ValueType::FLOAT && n->subtype != TokenType::KW_FLOAT) interpreter_error("Array elements must be of type float.");
-        if (x.type == ValueType::BOOL && n->subtype != TokenType::KW_BOOL) interpreter_error("Array elements must be of type boolean.");
-        if (x.type == ValueType::STRING && n->subtype != TokenType::KW_STRING) interpreter_error("Array elements must be of type string.");
+        if (x.type == ValueType::INT && n->subtype != TokenType::KW_INT) interpreter_error("Array elements must be of type integer.", n);
+        if (x.type == ValueType::FLOAT && n->subtype != TokenType::KW_FLOAT) interpreter_error("Array elements must be of type float.", n);
+        if (x.type == ValueType::BOOL && n->subtype != TokenType::KW_BOOL) interpreter_error("Array elements must be of type boolean.", n);
+        if (x.type == ValueType::STRING && n->subtype != TokenType::KW_STRING) interpreter_error("Array elements must be of type string.", n);
       }
     }
     scopes.back()[n->name->name] = val;
   }
   else if (auto n = dynamic_cast<AssignmentNode*>(node)) {
-    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.", n);
     Value val = evaluate(n->value);
     Value temp = lookupVariable(n->name->name)->second;
-    if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.");
+    if (val.type != temp.type) interpreter_error("Assigned value type does not match variable type.", n);
     if (val.type == ValueType::ARRAY) {
-      if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Assigned array exceeds fixed array size.");
-      if (val.subtype != temp.subtype) interpreter_error("Assigned array subtype is different.");
+      if (val.size > lookupVariable(n->name->name)->second.size) interpreter_error("Assigned array exceeds fixed array size.", n);
+      if (val.subtype != temp.subtype) interpreter_error("Assigned array subtype is different.", n);
       for (int i = 0; i<val.size; i++) {
         temp.arrayval[i] = val.arrayval[i];
       }
@@ -339,7 +339,7 @@ void Interpreter::execute(StatementNode* node) {
   }
   else if (auto n = dynamic_cast<IfStatementNode*>(node)) {
     Value val = evaluate(n->condition);
-    if (val.type != ValueType::BOOL) interpreter_error("If condition must be boolean.");
+    if (val.type != ValueType::BOOL) interpreter_error("If condition must be boolean.", n);
     if (val.boolval) {
       Scope guard(scopes);
       for (auto it: n->codeblock) execute(it);
@@ -347,7 +347,7 @@ void Interpreter::execute(StatementNode* node) {
     }
     for (auto x: n->elseif) {
       Value v = evaluate(x->condition);
-      if (v.type != ValueType::BOOL) interpreter_error("Else if condition must be boolean.");
+      if (v.type != ValueType::BOOL) interpreter_error("Else if condition must be boolean.", n);
       if (v.boolval) {
         Scope guard(scopes);
         for (auto it: x->codeblock) execute(it);
@@ -359,7 +359,7 @@ void Interpreter::execute(StatementNode* node) {
   }
   else if (auto n = dynamic_cast<WhileLoopNode*>(node)) {
     Value val = evaluate(n->condition);
-    if (val.type != ValueType::BOOL) interpreter_error("While condition must be boolean.");
+    if (val.type != ValueType::BOOL) interpreter_error("While condition must be boolean.", n);
     try {
       while (val.boolval) {
         try {
@@ -377,7 +377,7 @@ void Interpreter::execute(StatementNode* node) {
   }
   else if (auto n = dynamic_cast<ForLoopNode*>(node)) {
     Value val = evaluate(n->iterable);
-    if (val.type != ValueType::ARRAY) interpreter_error("For loop iterable must be array.");
+    if (val.type != ValueType::ARRAY) interpreter_error("For loop iterable must be array.", n);
     try {
       for (auto it: val.arrayval) {
         try {
@@ -406,28 +406,28 @@ void Interpreter::execute(StatementNode* node) {
     throw c;
   }
   else if (auto n = dynamic_cast<FunctionDeclarationNode*>(node)) {
-    if (functions.find(n->name->name) != functions.end()) interpreter_error("Function '" + n->name->name + "' is already declared.");
+    if (functions.find(n->name->name) != functions.end()) interpreter_error("Function '" + n->name->name + "' is already declared.", n);
     functions[n->name->name] = n;
     std::set<std::string> s;
     for (auto it: n->parameters) {
-      if (s.find(it->name->name) != s.end()) interpreter_error("Duplicate parameters are not allowed.");
+      if (s.find(it->name->name) != s.end()) interpreter_error("Duplicate parameters are not allowed.", n);
       s.insert(it->name->name);
     }
   }
   else if (auto n = dynamic_cast<IncrementNode*>(node)) {
-    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.", n);
     Value var = lookupVariable(n->name->name)->second;
     if (var.type == ValueType::INT) var.intval++;
     else if (var.type == ValueType::FLOAT) var.floatval++;
-    else interpreter_error("Increment operator requries int or float.");
+    else interpreter_error("Increment operator requries int or float.", n);
     assignVariable(n->name, var);
   }
   else if (auto n = dynamic_cast<DecrementNode*>(node)) {
-    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.");
+    if (lookupVariable(n->name->name) == scopes.back().end()) interpreter_error("Variable " + n->name->name + " undeclared.", n);
     Value var = lookupVariable(n->name->name)->second;
     if (var.type == ValueType::INT) var.intval--;
     else if (var.type == ValueType::FLOAT) var.floatval--;
-    else interpreter_error("Decrement operator requries int or float.");
+    else interpreter_error("Decrement operator requries int or float.", n);
     assignVariable(n->name, var);
   }
 }
@@ -438,12 +438,12 @@ void Interpreter::execute(ProgramNode* program) {
     for (auto stmt: program->statements) execute(stmt);
   }
   catch (BreakException&) {
-    interpreter_error("'break' used outside loop.");
+    interpreter_error("'break' used outside loop.", program);
   }
   catch (ContinueException&) {
-    interpreter_error("'continue' used outside loop.");
+    interpreter_error("'continue' used outside loop.", program);
   }
   catch (ReturnException&) {
-    interpreter_error("'return' used outside function.");
+    interpreter_error("'return' used outside function.", program);
   }
 }

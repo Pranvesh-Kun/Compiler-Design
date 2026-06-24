@@ -45,6 +45,8 @@ IdentifierNode* Parser::parseIdentifier() {
   Token cur = current();
   if (cur.type != TokenType::IDENTIFIER) parser_error(TokenType::IDENTIFIER);
   IdentifierNode* node = new IdentifierNode();
+  node->row = cur.line_num;
+  node->col = cur.col_num;
   node->name = cur.text;
   advance();
   return node;
@@ -53,12 +55,16 @@ IdentifierNode* Parser::parseIdentifier() {
 IntLiteralNode* Parser::parseIntLiteral() {
   IntLiteralNode* node = new IntLiteralNode();
   node->value = std::stoi(current().text);
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   return node;
 }
 
 FloatLiteralNode* Parser::parseFloatLiteral() {
   FloatLiteralNode* node = new FloatLiteralNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->value = std::stof(current().text);
   advance();
   return node;
@@ -66,6 +72,8 @@ FloatLiteralNode* Parser::parseFloatLiteral() {
 
 BoolLiteralNode* Parser::parseBoolLiteral() {
   BoolLiteralNode* node = new BoolLiteralNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   if (check(TokenType::BOOL_LITERAL_FALSE)) node->value = false;
   else node->value = true;
   advance();
@@ -74,6 +82,8 @@ BoolLiteralNode* Parser::parseBoolLiteral() {
 
 StringLiteralNode* Parser::parseStringLiteral() {
   StringLiteralNode* node = new StringLiteralNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->value = current().text;
   advance();
   return node;
@@ -81,6 +91,8 @@ StringLiteralNode* Parser::parseStringLiteral() {
 
 FunctionCallNode* Parser::parseFunctionCall() {
   FunctionCallNode* node = new FunctionCallNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   if (check(TokenType::KW_OUTPUT) || check(TokenType::KW_INPUT)) {
     IdentifierNode* temp = new IdentifierNode();
     if (check(TokenType::KW_INPUT)) temp->name = "input";
@@ -106,6 +118,8 @@ FunctionCallNode* Parser::parseFunctionCall() {
 
 IndexAccessNode* Parser::parseIndexAccess() {
   IndexAccessNode* node = new IndexAccessNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->object = parseIdentifier();
   if (!check(TokenType::L_SQUARE)) parser_error(TokenType::L_SQUARE);
   advance();
@@ -117,6 +131,8 @@ IndexAccessNode* Parser::parseIndexAccess() {
 
 ArrayLiteralNode* Parser::parseArrayLiteral() {
   ArrayLiteralNode* node = new ArrayLiteralNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   while (!check(TokenType::R_SQUARE)) {
     if (check(TokenType::END_OF_FILE)) parser_error(TokenType::END_OF_FILE);
@@ -157,6 +173,8 @@ ExpressionNode* Parser::parsePrimary() {
 ExpressionNode* Parser::parseUnaryExpression() {
   if (check(TokenType::KW_NOT) || check(TokenType::MINUS)) {
     UnaryExpressionNode* node = new UnaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->operation = current().type;
     advance();
     node->operand = parseUnaryExpression();
@@ -169,6 +187,8 @@ ExpressionNode* Parser::parseFactor() {
   ExpressionNode* left = parseUnaryExpression();
   while (check(TokenType::ASTERISK) || check(TokenType::SLASH) || check(TokenType::MOD)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -182,6 +202,8 @@ ExpressionNode* Parser::parseTerm() {
   ExpressionNode* left = parseFactor();
   while (check(TokenType::PLUS) || check(TokenType::MINUS)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -196,6 +218,8 @@ ExpressionNode* Parser::parseComparison() {
   while (check(TokenType::GRT_EQUALS) || check(TokenType::GRT_THAN)
   || check(TokenType::LESS_EQUALS) || check(TokenType::LESS_THAN)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -209,6 +233,8 @@ ExpressionNode* Parser::parseEquality() {
   ExpressionNode* left = parseComparison();
   while (check(TokenType::EQUALS) || check(TokenType::NOT_EQUALS)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -222,6 +248,8 @@ ExpressionNode* Parser::parseAnd() {
   ExpressionNode* left = parseEquality();
   while (check(TokenType::KW_AND)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -235,6 +263,8 @@ ExpressionNode* Parser::parseOr() {
   ExpressionNode* left = parseAnd();
   while (check(TokenType::KW_OR)) {
     BinaryExpressionNode* node = new BinaryExpressionNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->left = left;
     node->operation = current().type;
     advance();
@@ -250,6 +280,8 @@ ExpressionNode* Parser::parseExpression() {
 
 IncrementNode* Parser::parseIncrement() {
   IncrementNode* node = new IncrementNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->name = parseIdentifier();
   advance();
   return node;
@@ -257,6 +289,8 @@ IncrementNode* Parser::parseIncrement() {
 
 DecrementNode* Parser::parseDecrement() {
   DecrementNode* node = new DecrementNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->name = parseIdentifier();
   advance();
   return node;
@@ -264,6 +298,8 @@ DecrementNode* Parser::parseDecrement() {
 
 VariableDeclarationNode* Parser::parseVariableDeclaration() {
   VariableDeclarationNode* node = new VariableDeclarationNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->type = current().type;
   node->subtype = current().type;
   if (node->type == TokenType::KW_LET) {
@@ -336,6 +372,8 @@ VariableDeclarationNode* Parser::parseVariableDeclaration() {
 
 AssignmentNode* Parser::parseAssignment() {
     AssignmentNode* node = new AssignmentNode();
+    node->row = current().line_num;
+    node->col = current().col_num;
     node->name = parseIdentifier();
     if (current().type != TokenType::ASSIGN && !check(TokenType::PLUS_EQUAL) && !check(TokenType::ASTERISK_EQUAL) 
     && !check(TokenType::MINUS_EQUAL) && !check(TokenType::MOD_EQUAL) && !check(TokenType::SLASH_EQUAL)) parser_error(TokenType::ASSIGN);
@@ -361,6 +399,8 @@ AssignmentNode* Parser::parseAssignment() {
 
 IndexAssignmentNode* Parser::parseIndexAssignment() {
   IndexAssignmentNode* node = new IndexAssignmentNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->object = parseIdentifier();
   advance();
   node->index = parseExpression();
@@ -374,12 +414,16 @@ IndexAssignmentNode* Parser::parseIndexAssignment() {
 
 ExpressionStatementNode* Parser::parseExpressionStatement() {
   ExpressionStatementNode* node = new ExpressionStatementNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->expression = parseExpression();
   return node;
 }
 
 WhileLoopNode* Parser::parseWhileLoop() {
   WhileLoopNode* node = new WhileLoopNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
   advance();
@@ -397,26 +441,34 @@ WhileLoopNode* Parser::parseWhileLoop() {
 }
 
 ReturnNode* Parser::parseReturn() {
-  advance();
   ReturnNode* node = new ReturnNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
+  advance();
   node->value = parseExpression();
   return node;
 }
 
 BreakNode* Parser::parseBreak() {
   BreakNode* node = new BreakNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   return node;
 }
 
 ContinueNode* Parser::parseContinue() {
   ContinueNode* node = new ContinueNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   return node;
 }
 
 ElseIfNode* Parser::parseElseIf() {
   ElseIfNode* node = new ElseIfNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   if (current().type != TokenType::L_PAREN) parser_error(TokenType::L_PAREN);
   advance();
@@ -435,6 +487,8 @@ ElseIfNode* Parser::parseElseIf() {
 
 IfStatementNode* Parser::parseIfStatement() {
   IfStatementNode* node = new IfStatementNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
   advance();
@@ -467,6 +521,8 @@ IfStatementNode* Parser::parseIfStatement() {
 
 ForLoopNode* Parser::parseForLoop() {
   ForLoopNode* node = new ForLoopNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   advance();
   if (!check(TokenType::L_PAREN)) parser_error(TokenType::L_PAREN);
   advance();
@@ -488,6 +544,8 @@ ForLoopNode* Parser::parseForLoop() {
 
 ParameterNode* Parser::parseParameter() {
   ParameterNode* node = new ParameterNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   if (!check(TokenType::KW_INT) && !check(TokenType::KW_FLOAT) && !check(TokenType::KW_BOOL) 
   && !check(TokenType::KW_ARRAY) && !check(TokenType::KW_STRING)) {
     std::cout << "Parser Error at line " << current().line_num << ", column " << current().col_num << ".\n";
@@ -517,6 +575,8 @@ ParameterNode* Parser::parseParameter() {
 
 FunctionDeclarationNode* Parser::parseFunctionDeclaration() {
   FunctionDeclarationNode* node = new FunctionDeclarationNode();
+  node->row = current().line_num;
+  node->col = current().col_num;
   node->returntype = current().type;
   if (current().type == TokenType::KW_ARRAY) {
     advance();

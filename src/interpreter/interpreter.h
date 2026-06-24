@@ -8,7 +8,7 @@ class Interpreter {
     Value evaluate(ExpressionNode*);
     void execute(StatementNode*);
     void execute(ProgramNode*);
-    void interpreter_error(std::string);
+    void interpreter_error(std::string, ASTNode*);
     std::vector<std::unordered_map<std::string, Value>> scopes;
     std::unordered_map<std::string, Value>::iterator lookupVariable(std::string);
     void assignVariable(IdentifierNode*, Value);

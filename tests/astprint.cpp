@@ -208,6 +208,9 @@ void printAST(ASTNode* node, int depth = 0) {
     std::cout << "returntype: ";
     std::cout << tokenmap[n->returntype] << "\n";
     indent(depth+1);
+    std::cout << "returnsubtype: ";
+    std::cout << tokenmap[n->returnsubtype] << "\n";
+    indent(depth+1);
     std::cout << "parameters:\n";
     for (auto it: n->parameters) printAST(it, depth+2);
     indent(depth+1);

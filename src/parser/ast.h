@@ -5,6 +5,8 @@
 
 class ASTNode {
   public:
+    int row;
+    int col;
     virtual ~ASTNode() = default;
 };
 
