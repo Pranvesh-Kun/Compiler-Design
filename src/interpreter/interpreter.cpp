@@ -308,7 +308,11 @@ void Interpreter::execute(StatementNode* node) {
     if (val.type == ValueType::BOOL && n->type != TokenType::KW_BOOL) interpreter_error("Initializer must be of type boolean.", n);
     if (val.type == ValueType::STRING && n->type != TokenType::KW_STRING) interpreter_error("Initializer must be of type string.", n);
     if (val.type == ValueType::ARRAY) {
+      Value sz = evaluate(n->size);
+      if (sz.type != ValueType::INT) interpreter_error("Array size should be int", n);
+      if (sz.intval <= 0) interpreter_error("Array size must be strictly positive.", n);
       if (n->type != TokenType::KW_ARRAY) interpreter_error("Initializer must be an array.", n);
+      val.size = sz.intval;
       for (auto x: val.arrayval) {
         if (x.type == ValueType::INT && n->subtype != TokenType::KW_INT) interpreter_error("Array elements must be of type integer.", n);
         if (x.type == ValueType::FLOAT && n->subtype != TokenType::KW_FLOAT) interpreter_error("Array elements must be of type float.", n);
@@ -333,6 +337,19 @@ void Interpreter::execute(StatementNode* node) {
       return;
     }
     assignVariable(n->name, val);
+  }
+  else if (auto n = dynamic_cast<IndexAssignmentNode*>(node)) {
+    auto temp = lookupVariable(n->object->name);
+    if (temp == scopes.back().end()) interpreter_error("Variable " + n->object->name + " undeclared.", n);  
+    Value ind = evaluate(n->index);
+    if (ind.type != ValueType::INT) interpreter_error("Array index must be int.", n);
+    Value val = evaluate(n->value);
+    if (temp->second.type != ValueType::ARRAY) interpreter_error("Identifier '" + n->object->name + "' must be array.", n);
+    if (temp->second.subtype != val.type) interpreter_error("Assigned value type does not match variable type.", n);
+    if (temp->second.size <= ind.intval) interpreter_error("Array index out of bounds.", n);
+    Value x = temp->second;
+    x.arrayval[ind.intval] = val;
+    assignVariable(n->object, x);
   }
   else if (auto n = dynamic_cast<ExpressionStatementNode*>(node)) {
     evaluate(n->expression);
@@ -412,6 +429,22 @@ void Interpreter::execute(StatementNode* node) {
     for (auto it: n->parameters) {
       if (s.find(it->name->name) != s.end()) interpreter_error("Duplicate parameters are not allowed.", n);
       s.insert(it->name->name);
+    }
+    for (auto it: n->body) {
+      if (auto x = dynamic_cast<ReturnNode*>(it)) {
+        if (n->returntype == TokenType::KW_INT && evaluate(x->value).type != ValueType::INT) interpreter_error("Return type must be integer.", x);
+        if (n->returntype == TokenType::KW_FLOAT && evaluate(x->value).type != ValueType::FLOAT) interpreter_error("Return type must be float.", x);
+        if (n->returntype == TokenType::KW_BOOL && evaluate(x->value).type != ValueType::BOOL) interpreter_error("Return type must be bool.", x);
+        if (n->returntype == TokenType::KW_STRING && evaluate(x->value).type != ValueType::STRING) interpreter_error("Return type must be string.", x);
+        if (n->returntype == TokenType::KW_ARRAY && evaluate(x->value).type != ValueType::ARRAY) interpreter_error("Return type must be array.", x);
+        if (n->returntype == TokenType::KW_ARRAY) {
+          if (n->returnsubtype == TokenType::KW_INT && evaluate(x->value).subtype != ValueType::INT) interpreter_error("Return type must be integer array.", x);
+          if (n->returnsubtype == TokenType::KW_FLOAT && evaluate(x->value).subtype != ValueType::FLOAT) interpreter_error("Return type must be float array.", x);
+          if (n->returnsubtype == TokenType::KW_BOOL && evaluate(x->value).subtype != ValueType::BOOL) interpreter_error("Return type must be bool array.", x);
+          if (n->returnsubtype == TokenType::KW_STRING && evaluate(x->value).subtype != ValueType::STRING) interpreter_error("Return type must be string array.", x);
+          // if (n->returnsubtype == TokenType::KW_ARRAY && evaluate(x->value).subtype != ValueType::ARRAY) interpreter_error("Return type must be array.", x);
+        }
+      }
     }
   }
   else if (auto n = dynamic_cast<IncrementNode*>(node)) {
